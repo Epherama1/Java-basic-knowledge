@@ -74,5 +74,66 @@ JSP就是一个Servlet
 JSP是服务器端的，它的局限性在于数据必须在返回给客户端之前就“装载”完毕。不然HTML都已经发出去了，你就没办法跑到浏览器里把数据给它安上。而有了AJAX，就可以实现零件发送、目的地组装了。
 
 
+项目一：
+RPC(Remote Procedure Call): a function call to a remote server. 
+Java Servlet: Java class to handle RPC on the server-side.
+Tomcat is an environment to run your web service, it provides low-level support such as making TCP connections, 
+receiving requests from clients, finding the correct service to handle that request, and sending a response back.
+
+Normally we don’t return static HTML code to the front end directly because it should be created by a front-end developer. 
+We just need to return the correct data that should be displayed by the frontend. In our project, we’ll use JSON as for body format.
+
+because we’re using some features only available in JavaSE-1.8+。 //what kind of features?
+Open pom.xml file, set java version and add Tomcat library as dependency of your project. 
+
+写的Java程序存放在src/main/java/rpc，但需要在servelet-mapping建立映射
+
+
+JSON: JavaScript Object Notation(JavaScript 对象表示法)
+省空间，基本没浪费的字符。标准，主流都用它。语言无关。类型安全。
+response.setContentType("application/json"); //设置数据类型
+
+response.getWriter()的作用
+PrintWriter out = response.getWriter();
+getWriter()返回一个PrintWriter object
+但是为什么用response呢？而不是new一个PrintWriter对象呢？
+ 
+答：
+代码首句的意思是拿到流（可以理解为管道）对象，而非response这个实体，他拿到了PrintWriter这个类的字符流对象，然后对流进行操作。
+PrintWriter类是Writer类的子类。
+你做的操作的结果应该想要反映到response对应的位置，于是你要拿到属于response的流，而不是new一个出来。
+这里的out对象是从Web容器中获取到的，而不是你新创建的，web容器加载servlet的时候已经为您创建好了out对象，你只要获取到然后使用就可以了！
+
+JSONArrray is the structure that contains a series of JSONObject.
+
+HTML - 页面结构
+CSS - 页面的样式表现
+JavaScript - 交互行为
+
+
+HttpClient是Apache Jakarta Common下的子项目，用来提供高效的、最新的、功能丰富的支持HTTP协议的客户端编程工具包。
+HTTP Client和浏览器有点像，都可以用来发送请求，接收服务端响应的数据。但它不是浏览器，没有用户界面。HttpClient是一个HTTP通信库，只通过其API用于传输和接受HTTP消息。
+
+P161：为什么要引入Httpclient？他的作用是什么？之前的serverletresponse为什么不继续用了？：
+为了在后端实现客户端的角色。在后端充当客户端角色给其他的后端发送http请求。
+client(前端) -> serverlet -> Github client -> Github server
+serverlet和GitHub client可以合在一起
+
+CloseableHttpClient httpclient = HttpClients.createDefault();
+HttpGet httpGet = new HttpGet("http://targethost/homepage");
+CloseableHttpResponse response1 = httpclient.execute(httpGet);
+
+try {
+    System.out.println(response1.getStatusLine()); //判断状态是否正确
+    HttpEntity entity1 = response1.getEntity();    //读取http response的body
+
+    // do something useful with the response body
+    // and ensure it is fully consumed
+    EntityUtils.consume(entity1);    //如果是发送两个请求，则第一个请求发送完要调用一下consume
+} finally {
+    response1.close();
+}
+
+
 
 
