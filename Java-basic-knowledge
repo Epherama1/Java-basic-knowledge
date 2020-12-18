@@ -118,7 +118,9 @@ P161：为什么要引入Httpclient？他的作用是什么？之前的serverlet
 为了在后端实现客户端的角色。在后端充当客户端角色给其他的后端发送http请求。
 client(前端) -> serverlet -> Github client -> Github server
 serverlet和GitHub client可以合在一起
+一个httpclient可以发送多个请求
 
+Example1：
 CloseableHttpClient httpclient = HttpClients.createDefault();
 HttpGet httpGet = new HttpGet("http://targethost/homepage");
 CloseableHttpResponse response1 = httpclient.execute(httpGet);
@@ -133,6 +135,163 @@ try {
 } finally {
     response1.close();
 }
+
+Example2:自带garbage collection（consume and close）
+CloseableHttpClient httpclient = HttpClients.createDefault();
+
+try {
+    HttpGet httpget = new HttpGet("http://httpbin.org/");
+    System.out.println("Executing request " + httpget.getRequestLine());
+
+    // Create a custom response handler
+    ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
+
+        @Override
+        public String handleResponse(
+                final HttpResponse response) throws ClientProtocolException, IOException {
+            int status = response.getStatusLine().getStatusCode();
+            if (status >= 200 && status < 300) {
+                HttpEntity entity = response.getEntity();
+                return entity != null ? EntityUtils.toString(entity) : null;
+            } else {
+                throw new ClientProtocolException("Unexpected response status: " + status);
+            }
+        }
+
+    };
+
+    String responseBody = httpclient.execute(httpget, responseHandler);
+    System.out.println("----------------------------------------");
+    System.out.println(responseBody);
+} finally {
+    httpclient.close();
+}
+
+iimplement：
+public JSONArray search(double lat, double lon, String keyword) {  //根据给出的地理位置和关键词，以Jason array的形式返回response的body
+		if (keyword == null) {
+			keyword = DEFAULT_KEYWORD;
+		}
+		try {
+			keyword = URLEncoder.encode(keyword, "UTF-8");  //url中空格是特殊字符，url不支持，需要转码，浏览器会自动转换。但是这个是一个充当client的后台程序，但这就需要自己写转码的程序.若URL中出现空格，则空格后的内容等于没有，只按空格前的内容搜索。
+		} catch (UnsupportedEncodingException e) {   //点击surround with try/catch
+			e.printStackTrace();
+		}
+		String url = String.format(URL_TEMPLATE, keyword, lat, lon); //匹配template里的%s
+		
+		CloseableHttpClient httpclient = HttpClients.createDefault();  //定义httpclient
+
+	    // Create a custom response handler
+	    ResponseHandler<JSONArray> responseHandler = new ResponseHandler<JSONArray>() {   //都设置为JSONArray
+
+	        @Override
+	        public JSONArray handleResponse(                             //都设置为JSONArray
+	                final HttpResponse response) throws IOException {
+	            if (response.getStatusLine().getStatusCode() != 200) {   //判断response是否返回正确
+	            	return new JSONArray();                                 //不正确的话就直接返回一个长度为0的JSONArray
+	            }
+	            HttpEntity entity = response.getEntity();                //判断body是否为空
+	            if (entity == null) {
+	            	return new JSONArray();
+	            }
+	            String responseBody = EntityUtils.toString(entity);      //把body转成string格式
+	            return new JSONArray(responseBody);                      //把string变成JASONArray
+	        }
+	    };
+	    
+		try {
+			return httpclient.execute( new HttpGet(url), responseHandler);
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return new JSONArray();
+	}
+ 
+update doGet():
+import external.GitHubClient;
+
+public class SearchItem extends HttpServlet {
+      ...
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		double lat = Double.parseDouble(request.getParameter("lat"));
+		double lon = Double.parseDouble(request.getParameter("lon"));
+
+		GitHubClient client = new GitHubClient();
+		RpcHelper.writeJsonArray(response, client.search(lat, lon, null)); //把client search的结果写到要返回的response中
+	}
+
+
+entity：数据清理之后的数据结构
+设置一个Item类，并写好让外界访问的API：getter
+
+实现可以将某些参数不初始化来定义一个对象：
+builder.setItemId("abcd");
+Item item = builder.build();
+
+public static class ItemBuilder {
+		private String itemId;
+		private String name;
+		private String address;
+		private String imageUrl;
+		private String url;
+		private Set<String> keywords;
+
+		public void setItemId(String itemId) {
+			this.itemId = itemId;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public void setAddress(String address) {
+			this.address = address;
+		}
+
+		public void setImageUrl(String imageUrl) {
+			this.imageUrl = imageUrl;
+		}
+
+		public void setUrl(String url) {
+			this.url = url;
+		}
+
+		public void setKeywords(Set<String> keywords) {
+			this.keywords = keywords;
+		}
+
+		public Item build() {          //要传的参数传完后，最后调用一次build()一起初始化
+			return new Item(this);
+		}
+	}
+
+
+getString()用法？啥时候用？
+List<List<String>> keywords = MonkeyLearnClient.extractKeywords(descriptionList.toArray(new String[descriptionList.size()])); //把List转化成Array
+Set没有order，List有Order
+
+应用JDBC在Java中操作数据库
+table之间是有联系的，要按一定顺序建立和删除
+
+Primary key：不能为空，不能重复，可以两列绑在一起作为一个primary key，会自动创建索引 null和null不算重复
+Foreign key：指向另一个table中的某一列（Primary Key），保证在子table中插入时，某个用户已经在父table里存在。若没有Primary Key，可以声明父table某一列为unique
+
+INSERT INTO history (user_id, item_id) VALUES (?, ?）在userid和itemid的列中插入value对应的数据
+
+若一个class中全都是static方法，不想被别人用来构建对象，可以设置一个私有的构造函数
+
+Apache commons IO
+IOUtils.toString
+
+ResultSet:元素为object的set。有个iterator指向第-1个元素，通过next遍历 6.7/1.30
+
+The session object is stored on the server side, only session ID is returned to the client side.
+
+
 
 
 
