@@ -290,9 +290,162 @@ IOUtils.toString
 ResultSet:元素为object的set。有个iterator指向第-1个元素，通过next遍历 6.7/1.30
 
 The session object is stored on the server side, only session ID is returned to the client side.
+When a user logs out, the session is destroyed. Next time a user comes, he/she has to authenticate again to get a new session.
+
+session和cookie的区别：？？？
+
+logout一般写在post里，有些浏览器会提前cache doGet的内容，这样会导致直接logout
+
+recommendation algorithm：lesson16 6.10
+
+EC2 VM docker deploy：Lesson13 + Lesson19 6.14 14.00
+Setup MySQL on Amazon RDS
+Amazon Web Service(AWS) Introduction
+Amazon Elastic Compute Cloud(EC2)
+Elastic Compute Cloud (EC2) allows scalable deployment of applications by providing a Web service through which a user can boot an Amazon Machine Image to create a virtual machine, which Amazon calls an "instance", containing any software desired. A user can create, launch, and terminate server instances as needed, paying by the hour for active servers, hence the term "elastic".
+Amazon Relational Database Service(RDS)
+security group：firewall
+
+数据库建立：先通过EC2建立一个security group，在RDS配置中与之关联
+虚拟机建立：launch EC2，设置security group，下载key pair，用命令行从本地连接到虚拟机
+
+Docker：container service
+Bins：程序编译后的二进制代码
+LIBS：library库
+虚拟机上只跑一个程序有点浪费，若跑多个程序，程序之间无法实现百分百隔离，多个人访问同一个虚拟机会有安全漏洞，内存可能重叠
+docker实现两个程序的完全隔离
+程序的运行可能并不需要OS所有的资源，在这种情况给其配置整个操作系统就有点浪费。在每个docker中，可以有选择的只配置特定资源避免浪费。
+EC2配置虚拟机，在虚拟机上运行docker跑程序
+dockerfile：标明了此docker中要包含什么：基础资源和要运行的程序
+先以当前路径下的dockerfile作为蓝本build一个docker镜像（image），每运行一次这个镜像就会生成一个container，每个镜像里的内容一样
+虚拟机的端口号和docker的端口号可以不一样，可以在运行docker的时候相互对应上
+
+Summery ：Lesson20 6.15
 
 
+项目二：
+GKE：Lesson22 6.20
+租虚拟机instance部署自己的service和亚马逊EC2类似
+GKE可以管理许多台虚拟机instance，可以对这多台虚拟机进行分类和管理；而且可以实现不同虚拟机台数的自动切换，用户多就多一些，用户少就少一些；自带负载均衡器，保证每台虚拟机上的负载相差不大。
+但EC2只能在一台上，如果需要多台，则必须一台一台部署
+管理单台虚拟机：GCE = EC2
 
+ElasticSearch：
+存储用户的message（留言评论）
+搜索强大，根据要求可以自主建立各种各样的index，对不同的数据类型有不同形式的优化
+非关系型数据库，二维表格，key-value pair数据
 
+GCS：
+网盘，相当于文件系统，在线存储文件，储存用户上传的媒体文件。
+数据库不适合存储视频和照片：媒体文件用不到数据库的各种功能。数据库功能：结构化存储数据方便查找和更新。
+数据库存储数据：数据库 -> 文件系统（操作系统）-> 磁盘。若绕开数据库，直接通过文件系统存入磁盘，则数据库的开销就可以省去了。
+都运行在Google cloud平台上，兼容性好
+如何将媒体文件和留言相关联：GCS中每一个文件都对应一个独立的网址，把该网址存入到ElasticSearch中
 
+Firewall：
+控制虚拟机的访问权限：谁能向虚拟机发请求以及请求都发到哪个端口。0.0.0.0/0向所有用户敞开。
+tcp：
+8080：go程序测试使用
+9200: ElasticSearch测试使用
 
+Use tmux to handle disconnection
+
+Go语言的并发机制
+图灵完整
+C和C++直接编译成机器语言machine code，可以直接在cpu上运行，内存管理由程序员控制->效率高，可能内存泄漏。smart point智能指针自动释放。
+Java有garbage collector
+两种数据类型可以任意转换不需要转换函数，隐式转换 ：弱类型。python不是，python是动态类型，随意绑定。
+Java编译成byte code。JIT，just in time 直接到machine code。Java静态语言，可以优化。
+Go编译型语言，Java和python解释型语言。
+Go比C慢：garbage collector，GC的时候有一部分没法执行。
+Go的主要用途：并发机制
+package：Java，python，go。可见性的控制，package内部可见，不用import。//那同一个package内，不同class之间可以互相访问private的元素吗？
+
+首字母是否大写：public，外部可访问
+类型名在变量的后面
+Java中：SomeClass var = GetObject() 将var这个变量绑定一个对象 ；C++中：SomeClass* var = GetObject()
+多个返回值：
+func swap(x, y string) (string, string) {
+	return y, x
+}
+给返回值绑定一个名字，然后直接返回
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return
+}
+声明变量：若不赋值则有默认值，零假空
+var i int
+
+自动判断是否是在初始化：简化写法，但不能在函数外这么写
+k ：= 3；
+i := 42
+f := float64(i)
+u := uint(f)
+i := 42           // int
+f := 3.142        // float64
+g := 0.867 + 0.5i // complex128
+
+%v可以绑定任何类型的值
+
+常量：const Pi = 3.14
+
+可以给常量一个非常大的整数，超过64位
+Big = 1 << 100：将1往左移动100位
+Small = Big >> 99：将Big往右移动99位
+
+int32，int64，int128，明确标注
+
+For loop：
+for循环不用加括号
+for i := 0; i < 10; i++ {
+		sum += i
+	}
+while通过for实现：
+for sum < 1000 {
+		sum += sum
+while(true):
+for {
+	}
+
+if不用加括号
+可以在if前声名变量，保证其作用域在if内：
+if v := math.Pow(x, n); v < lim {
+		return v
+	}
+
+Switch：
+可以匹配string，Java也可以匹配string，C不能匹配string
+Go的switch中没有break语句
+//fallthrough是啥？
+
+Switch当成else if用：
+func main() {
+	t := time.Now()
+	switch {
+	case t.Hour() < 12:
+		fmt.Println("Good morning!")
+	case t.Hour() < 17:
+		fmt.Println("Good afternoon.")
+	default:
+		fmt.Println("Good evening.")
+	}
+}
+
+Defer：
+离开作用域的时候执行
+func main() {
+	defer fmt.Println("world")
+
+	fmt.Println("hello")     //defer：fmt.Println("hello")是个栈
+}
+用来释放资源：defer f2.Close()，保证离开作用域必定执行。先执行后面的defer，再执行前面的：栈。因为可能后面的要依赖前面的资源。
+//Java的yield是啥？
+	}
+	
+指针：
+p := &i         // point to i 把i的地址赋给p
+fmt.Println(*p) // read i through the pointer 
+*p = 21         // set i through the pointer 取以p位地址的值
+fmt.Println(i)  // see the new value of i     i变成21了
+以
