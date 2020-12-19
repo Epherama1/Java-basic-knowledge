@@ -448,4 +448,67 @@ p := &i         // point to i 把i的地址赋给p
 fmt.Println(*p) // read i through the pointer 
 *p = 21         // set i through the pointer 取以p位地址的值
 fmt.Println(i)  // see the new value of i     i变成21了
-以
+
+struct：
+type Vertex struct {
+	X int
+	Y int
+}
+func main() {
+	fmt.Println(Vertex{1, 2})直接初始化struct
+}
+func main() {
+	v := Vertex{1, 2}
+	v.X = 4       在外面访问struct的内部元素
+
+指针struct：
+func main() {
+	v := Vertex{1, 2}
+	p := &v
+	p.X = 1e9
+	fmt.Println(v)
+}
+
+var (
+	v1 = Vertex{1, 2}  // has type Vertex
+	v2 = Vertex{X: 1}  // Y:0 is implicit
+	v3 = Vertex{}      // X:0 and Y:0
+	p  = &Vertex{1, 2} // has type *Vertex
+)
+
+数组是定长的：
+func main() {
+	var a [2]string
+	a[0] = "Hello"
+	a[1] = "World"
+	fmt.Println(a[0], a[1])
+	fmt.Println(a)
+
+	primes := [6]int{2, 3, 5, 7, 11, 13}
+	fmt.Println(primes)
+}
+
+Slice：不定长
+func main() {
+	primes := [6]int{2, 3, 5, 7, 11, 13}
+	var s []int = primes[1:4]    //[)
+	fmt.Println(s)
+}
+
+浅复制和深复制：
+浅：指向同一个内存区间，改一个，另一个也变
+深：不同内存区间但值一样
+
+func main() {
+	s := []int{2, 3, 5, 7, 11, 13}
+
+	s = s[1:4]
+	fmt.Println(s)
+
+	s = s[:2]
+	fmt.Println(s)
+
+	s = s[1:]
+	fmt.Println(s)
+}
+	
