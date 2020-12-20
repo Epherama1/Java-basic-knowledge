@@ -302,7 +302,8 @@ EC2 VM docker deploy：Lesson13 + Lesson19 6.14 14.00
 Setup MySQL on Amazon RDS
 Amazon Web Service(AWS) Introduction
 Amazon Elastic Compute Cloud(EC2)
-Elastic Compute Cloud (EC2) allows scalable deployment of applications by providing a Web service through which a user can boot an Amazon Machine Image to create a virtual machine, which Amazon calls an "instance", containing any software desired. A user can create, launch, and terminate server instances as needed, paying by the hour for active servers, hence the term "elastic".
+Elastic Compute Cloud (EC2) allows scalable deployment of applications by providing a Web service through which a user can boot an Amazon Machine Image to create a virtual machine, which Amazon calls an "instance", containing any software desired. 
+A user can create, launch, and terminate server instances as needed, paying by the hour for active servers, hence the term "elastic".
 Amazon Relational Database Service(RDS)
 security group：firewall
 
@@ -511,4 +512,48 @@ func main() {
 	s = s[1:]
 	fmt.Println(s)
 }
-	
+
+sudo vim /etc/elasticsearch/elasticsearch.yml
+discovery.type: single-node   //不以分布式来运行
+ElasticSearch运行端口：9200
+
+为什么选internalIP而不选externalIP？每次重启虚拟机internalIP不改变，外部IP为什么变？IP地址有限
+const (
+        POST_INDEX = "post"
+        ES_URL = "http://YOUR_GCE_INTERNAL_IP_ADDRESS:9200"
+)
+func main() {
+        client, err := elastic.NewClient(elastic.SetURL(ES_URL)) //与数据库建立连接，ES_URL是数据库的网址加端口号，返回两个值，err用来判断是否有错误发生，若运行在同一台虚拟机上localhost也可以，但以防万一不在一台虚拟机上
+        if err != nil {
+                panic(err)
+        }
+
+        exists, err := client.IndexExists(POST_INDEX).Do(context.Background())     //Index就是database，判断数据库POST_INDEX是否存在
+                                                                                   //前面是提供参数，Do是真正执行，.Background:空白，没有额外信息
+        if err != nil {                                                            //IndexExists是对于ElasticSearch的http请求，context该请求是否有额外参数（提前终止），请求处理的过程转变为Go routine，参数传给Go routine
+                panic(err)
+        }
+        if !exists {	
+                mapping := `{    //database的蓝图
+			
+			
+                        "mappings": {
+                                "properties": {  //列
+                                        "user":     { "type": "keyword", "index": false },
+                                        "message":  { "type": "keyword", "index": false },
+                                        "location": { "type": "geo_point" },
+                                        "url":      { "type": "keyword", "index": false },
+                                        "type":     { "type": "keyword", "index": false },
+                                        "face":     { "type": "float" }
+                                }
+                        }
+                }`
+                _, err := client.CreateIndex(POST_INDEX).Body(mapping).Do(context.Background())
+                if err != nil {
+                        panic(err)
+                }
+        }
+        fmt.Println("Post index is created.")
+}
+
+
