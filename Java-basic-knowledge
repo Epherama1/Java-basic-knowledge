@@ -534,26 +534,29 @@ func main() {
                 panic(err)
         }
         if !exists {	
-                mapping := `{    //database的蓝图
-			
-			
+                mapping := `{    //database的蓝图schema
+			”settings“:{
+				"number_of_shards":1,    //切片存储
+				"number_of_replicas":0   //备份
+			}
                         "mappings": {
                                 "properties": {  //列
-                                        "user":     { "type": "keyword", "index": false },
-                                        "message":  { "type": "keyword", "index": false },
-                                        "location": { "type": "geo_point" },
+                                        "user":     { "type": "keyword", "index": false },  //数据类型，是否建立索引
+                                        "message":  { "type": "keyword", "index": false },  //keyword：string
+                                        "location": { "type": "geo_point" },                //geo_point:自动建立2-d树来进行range search
                                         "url":      { "type": "keyword", "index": false },
                                         "type":     { "type": "keyword", "index": false },
                                         "face":     { "type": "float" }
                                 }
                         }
                 }`
-                _, err := client.CreateIndex(POST_INDEX).Body(mapping).Do(context.Background())
+                _, err := client.CreateIndex(POST_INDEX).Body(mapping).Do(context.Background())   //创建数据库
                 if err != nil {
                         panic(err)
                 }
         }
         fmt.Println("Post index is created.")
 }
+ElasticSearch本来是有table的概念叫type，但ElasticSearch有个bug，他每个type内不能有同名的列，bug修不好，不能重复也就没必要多个table了，所以没有table这个概念
 
-
+如何用Go操作ElasticSearch：
