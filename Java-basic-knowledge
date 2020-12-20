@@ -833,7 +833,7 @@ import (
     "github.com/pborman/uuid"
 )
 var (        //不同的后缀映射成不同的文件类型
-        mediaTypes = map[string]string{
+        mediaTypes = map[string]string{    //HashMap
                 ".jpeg": "image",
                 ".jpg":  "image",
                 ".gif":  "image",
@@ -871,11 +871,11 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
         fmt.Println("Received one post request")
         w.Header().Set("Content-Type", "application/json")
 	
-	
+	//Read parameter from client
         lat, _ := strconv.ParseFloat(r.FormValue("lat"), 64)  //参数的读取不是通过URL，而是通过body，格式上也不是Json数据，是form data的格式，因为参数内既有文字也有文件
-        lon, _ := strconv.ParseFloat(r.FormValue("lon"), 64)
+        lon, _ := strconv.ParseFloat(r.FormValue("lon"), 64)  //FormValue是用来提取form data中的value
 
-        p := &Post{                          //通过目前已知的参数初始化一个post对象，不知道的部分先空着
+        p := &Post{                          //通过目前已知的参数初始化一个post对象（要存在数据库中的结构体），不知道的部分先空着
                 User:    r.FormValue("user"),
                 Message: r.FormValue("message"),
                 Location: Location{          //Location是开始自己建的结构体
@@ -883,32 +883,33 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
                         Lon: lon,
                 },
         }
-
-        file, header, err := r.FormFile("image")
+  	//save image to GCS
+        file, header, err := r.FormFile("image")  //得到文件内容和文件属性，//FormFile是用来提取form data中的file
         if err != nil {
                 http.Error(w, "Image is not available", http.StatusBadRequest)
                 fmt.Printf("Image is not available %v\n", err)
                 return
         }
 
-        suffix := filepath.Ext(header.Filename)
+        suffix := filepath.Ext(header.Filename)   //通过filepath.Ext得到文件后缀
         if t, ok := mediaTypes[suffix]; ok {
                 p.Type = t
         } else {
                 p.Type = "unknown"
         }
 
-        id := uuid.New()
+        id := uuid.New()                          //为了得到一个unique的ID给Object作为名字
         mediaLink, err := saveToGCS(file, id)
         if err != nil {
                 http.Error(w, "Failed to save image to GCS", http.StatusInternalServerError)
                 fmt.Printf("Failed to save image to GCS %v\n", err)
                 return
         }
-        p.Url = mediaLink
-
-        if p.Type == "image" {
-                uri := fmt.Sprintf("gs://%s/%s", BUCKET_NAME, id)
+        p.Url = mediaLink   //填充要存在数据库中的结构体p中对应url的部分
+	
+	//annotate image with vision api
+        if p.Type == "image" {               //判断必须是图片才能识别
+                uri := fmt.Sprintf("gs://%s/%s", BUCKET_NAME, id)    //刚才只得到了一个external ip，为了使用internal ip（uri），手动拼接一个 //Sprintf赋值给前面的变量uri
                 if score, err := annotate(uri); err != nil {
                         http.Error(w, "Failed to annotate image", http.StatusInternalServerError)
                         fmt.Printf("Failed to annotate the image %v\n", err)
@@ -917,8 +918,11 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
                         p.Face = score
                 }
         }
+//为什么不直接返回uri而要返回url，这使得在进行人脸识别时还要进行一次手动转换？因为url真正的目的是提供给前端访问图片的，前端不一定也运行在GCE中，若变成uri前端则无法访问。
+//人脸识别只是一个附属功能
 
-        err = saveToES(p, POST_INDEX, id)
+        //save post to ES
+        err = saveToES(p, POST_INDEX, id)  //P：要存储的数据，POST_INDEX：存在哪一个数据库里，ID：unique id
         if err != nil {
                 http.Error(w, "Failed to save post to Elasticsearch", http.StatusInternalServerError)
                 fmt.Printf("Failed to save post to Elasticsearch %v\n", err)
@@ -927,6 +931,29 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 }
 
 
+//之前按经纬度检索，现在按人脸出现的概率检索
+func handlerCluster(w http.ResponseWriter, r *http.Request) {
+        fmt.Println("Received one cluster request")
+        w.Header().Set("Content-Type", "application/json")
+
+        term := r.URL.Query().Get("term")
+        query := elastic.NewRangeQuery(term).Gte(0.9)     //只有query不一样
+
+        searchResult, err := readFromES(query, POST_INDEX)
+        if err != nil {
+                http.Error(w, "Failed to read from Elasticsearch", http.StatusInternalServerError)
+                return
+        }
+
+        posts := getPostFromSearchResult(searchResult)
+        js, err := json.Marshal(posts)
+        if err != nil {
+                http.Error(w, "Failed to parse post object", http.StatusInternalServerError)
+                fmt.Printf("Failed to parse post object %v\n", err)
+                return
+        }
+        w.Write(js)
+}
 
 
 
