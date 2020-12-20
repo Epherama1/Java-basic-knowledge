@@ -513,6 +513,46 @@ func main() {
 	fmt.Println(s)
 }
 
+import (
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+)
+
+type Location struct {
+        Lat float64 `json:"lat"`
+        Lon float64 `json:"lon"`
+}
+
+type Post struct {
+        User     string   `json:"user"`    //相当于转换时的说明，一一对应转换
+        Message  string   `json:"message"`
+        Location Location `json:"location"`
+        Url      string   `json:"url"`
+        Type     string   `json:"type"`
+        Face     float32  `json:"face"`
+}
+
+func main() {
+        fmt.Println("started-service")
+        http.HandleFunc("/post", handlerPost)  //将函数与请求绑定：若url中是post请求，则调用handlerPost这个函数来处理这个请求
+        log.Fatal(http.ListenAndServe(":8080", nil))    //作用？6.20 14:00
+}
+
+func handlerPost(w http.ResponseWriter, r *http.Request) {     //serverlet类似，处理http request并将结果写入response    这是干啥用的？
+        // Parse from body of request to get a json object.
+        fmt.Println("Received one post request")
+        decoder := json.NewDecoder(r.Body)       //准备把Jason的数据转换为其他格式
+        var p Post                               //Go数据格式
+        if err := decoder.Decode(&p); err != nil {     //转换
+                panic(err)
+        }
+
+        fmt.Fprintf(w, "Post received: %s\n", p.Message)     //对w做了什么处理？6.20 14:00
+}
+
+
 sudo vim /etc/elasticsearch/elasticsearch.yml
 discovery.type: single-node   //不以分布式来运行
 ElasticSearch运行端口：9200
@@ -559,4 +599,216 @@ func main() {
 }
 ElasticSearch本来是有table的概念叫type，但ElasticSearch有个bug，他每个type内不能有同名的列，bug修不好，不能重复也就没必要多个table了，所以没有table这个概念
 
-如何用Go操作ElasticSearch：
+如何用Go操作ElasticSearch：如何search
+
+//教程
+// Search with a term query
+ctx := context.Background()
+termQuery := elastic.NewTermQuery("user", "olivere")    //以什么样的限制条件去数据库中找数据，找user=olivere的数据，Term：关键词搜索法
+searchResult, err := client.Search().                   //searchResult存放返回的数据
+    Index("twitter").   // search in index "twitter"
+    Query(termQuery).   // specify the query            //确定检索限制条件
+    Sort("user", true). // sort by "user" field, ascending
+    From(0).Size(10).   // take documents 0-9
+    Pretty(true).       // pretty print request and response JSON
+    Do(ctx)             // execute                      //Do返回的就是一个pointer指针
+if err != nil {
+    // Handle error
+    panic(err)             //Panic会使得程序停止执行，但没必要，只要告知前端出错即可，特殊情况内存泄漏死锁可以听下程序
+}
+
+fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)    //debug
+
+var ttyp Tweet      //Tweet是个struct，ttyp是个Tweet类型的变量            //返回index和value两个参数，不关心index就用_代替
+for _, item := range searchResult.Each(reflect.TypeOf(ttyp)) {      //把searchResult中所有的搜索结果检查一下哪一些是能转换成ttyp类型的，把满足条件数据进行循环内操作（转换成ttyp），为了安全地转换
+    t := item.(Tweet)       //把item对象转换为Tweet对象
+    fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
+}
+unmarshal:把Jason格式的数据转变为Go的struct
+func(t):深复制
+func（&t）：浅复制，执行完func，t会跟着改变
+
+//根据搜索条件query选择出返回值（指针类型）
+func readFromES(query elastic.Query, index string) (*elastic.SearchResult, error) {   
+        client, err := elastic.NewClient(elastic.SetURL(ES_URL))
+        if err != nil {
+                return nil, err
+        }
+
+        searchResult, err := client.Search().
+                Index(index).
+                Query(query).
+                Pretty(true).
+                Do(context.Background())
+        if err != nil {
+                return nil, err
+        }
+
+        return searchResult, nil
+}
+
+//将search的返回值转化为之前定义的目标结构体
+func getPostFromSearchResult(searchResult *elastic.SearchResult) []Post {       
+        var ptype Post
+        var posts []Post
+
+        for _, item := range searchResult.Each(reflect.TypeOf(ptype)) {
+                p := item.(Post)
+                posts = append(posts, p)
+        }
+        return posts
+}
+
+//根据request中的信息在数据库中进行搜索，并将结果写入到response中返回
+func handlerSearch(w http.ResponseWriter, r *http.Request) {
+        fmt.Println("Received one request for search")
+
+        w.Header().Set("Content-Type", "application/json")     //通过在header加一个key-value pair告诉前端返回的数据类型是什么
+
+        lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)   //r.URL.Query()得到的是url中？后面的内容，类型是string，再把string转换成64位的float
+        lon, _ := strconv.ParseFloat(r.URL.Query().Get("lon"), 64)
+        // range is optional
+        ran := DISTANCE      //默认搜索范围string
+        if val := r.URL.Query().Get("range"); val != "" {  //若前端发来搜索范围则使用发来的，val只在if的作用域内有效
+                ran = val + "km"        //搜索参数要加一个单位
+        }
+        fmt.Println("range is ", ran)
+
+        query := elastic.NewGeoDistanceQuery("location")   //按照location距离搜索
+        query = query.Distance(ran).Lat(lat).Lon(lon)      //对location的限制条件，在lat和lon确定的点以ran为半径搜索
+        searchResult, err := readFromES(query, POST_INDEX)
+        if err != nil {
+                http.Error(w, "Failed to read post from Elasticsearch", http.StatusInternalServerError)  //返回http的错误写入response内，http.StatusInternalServerError是返回错误代码
+                fmt.Printf("Failed to read post from Elasticsearch %v.\n", err)
+                return
+        }
+        posts := getPostFromSearchResult(searchResult)
+
+        js, err := json.Marshal(posts)    //把Go的struct变成Jason数据
+        if err != nil {
+                http.Error(w, "Failed to parse posts into JSON format", http.StatusInternalServerError)
+                fmt.Printf("Failed to parse posts into JSON format %v.\n", err)
+                return
+        }
+        w.Write(js)
+}
+
+//教程
+func main() {
+        ctx := context.Background()
+
+        // Sets your Google Cloud Platform project ID.
+        projectID := "YOUR_PROJECT_ID"
+
+        // Creates a client.
+        client, err := storage.NewClient(ctx)     //GCS创建client
+        if err != nil {
+                log.Fatalf("Failed to create client: %v", err)
+        }
+
+        // Sets the name for the new bucket.
+        bucketName := "my-new-bucket"
+
+        // Creates a Bucket instance.
+        bucket := client.Bucket(bucketName)       //在GCS中创建bucket（文件夹）
+
+        // Creates the new bucket.
+        if err := bucket.Create(ctx, projectID, nil); err != nil {   //nil:地区的选择，property的设置都是默认选项
+                log.Fatalf("Failed to create bucket: %v", err)
+        }
+
+        fmt.Printf("Bucket %v created.\n", bucketName)
+}
+
+func write(client *storage.Client, bucket, object string) error {
+	ctx := context.Background()
+	// [START upload_file]
+	f, err := os.Open("notes.txt")   //打开一个文件
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	wc := client.Bucket(bucket).Object(object).NewWriter(ctx)  //创建一个将文件写入Object的流
+	if _, err = io.Copy(wc, f); err != nil {    //将刚才读入的文件复制到流中
+		return err
+	}
+	if err := wc.Close(); err != nil {
+		return err
+	}
+	// [END upload_file]
+	return nil
+}
+
+//项目代码
+//把媒体文件存储在数据库中
+func saveToGCS(r io.Reader, objectName string) (string, error) {    //r：要存储的文件；objectName：网盘中object的名字；string：图片或视频存储成功后返回的检索链接
+        ctx := context.Background()
+        client, err := storage.NewClient(ctx)
+        if err != nil {
+                return "", err
+        }
+
+        bucket := client.Bucket(BUCKET_NAME)         //创建一个bucket对象，可以用其创建新的bucket或者传入数据
+        if _, err := bucket.Attrs(ctx); err != nil {  //通过读取bucket的attribute判断bucket是否已经创建过
+                return "", err                        //若不存在则返回错误
+        } 
+
+        object := bucket.Object(objectName)         //在文件夹中创建一个名为objectName的文件
+        wc := object.NewWriter(ctx)                 //写文件的流
+        if _, err := io.Copy(wc, r); err != nil {     //相当于_, err := io.Copy(wc, r)；if err != nil {}
+                return "", err
+        }
+
+        if err := wc.Close(); err != nil {
+                return "", err
+        }
+	
+	//ACL：access control。通过service account实现不同组之间的交互，运行在GCE上的Go程序要访问GCS，通过GCE虚拟机对应的service account。默认只有创建者的service account可以访问，单位了使前端也可以访问URL，需要更改权限
+        if err := object.ACL().Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {   //storage.RoleReader读取权限，但没有其他权限；storage.AllUsers所有用户可以读其他用户上传的文件，但只能对自己上传的文件操作  
+                return "", err                                                                //但bucket的所有者可以对其中所有的文件操作
+        }
+
+        attrs, err := object.Attrs(ctx)     //通过Attribute找到需要返回的链接
+        if err != nil {
+                return "", err
+        }
+
+        fmt.Printf("Image is saved to GCS: %s\n", attrs.MediaLink)
+        return attrs.MediaLink, nil         //通过Attribute找到需要返回的链接
+}
+
+//vision.go
+
+package main
+
+import (
+        "context"
+        "fmt"
+        vision "cloud.google.com/go/vision/apiv1"  //
+)
+
+// Annotate an image file based on Cloud Vision API, return score and error if exists.
+func annotate(uri string) (float32, error) {
+        ctx := context.Background()
+        client, err := vision.NewImageAnnotatorClient(ctx)
+        if err != nil {
+                return 0.0, err
+        }
+        defer client.Close()
+
+        image := vision.NewImageFromURI(uri)
+        annotations, err := client.DetectFaces(ctx, image, nil, 1)
+        if err != nil {
+                return 0.0, err
+        }
+        if len(annotations) == 0 {
+                fmt.Println("No faces found.")
+                return 0.0, nil
+        }
+        return annotations[0].DetectionConfidence, nil
+}
+
+
+
+
