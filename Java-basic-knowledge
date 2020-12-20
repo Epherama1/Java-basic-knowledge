@@ -540,6 +540,7 @@ func main() {
         log.Fatal(http.ListenAndServe(":8080", nil))    //作用？6.20 14:00
 }
 
+//练习版handlerpost
 func handlerPost(w http.ResponseWriter, r *http.Request) {     //serverlet类似，处理http request并将结果写入response    这是干啥用的？
         // Parse from body of request to get a json object.
         fmt.Println("Received one post request")
@@ -636,7 +637,7 @@ func readFromES(query elastic.Query, index string) (*elastic.SearchResult, error
         }
 
         searchResult, err := client.Search().
-                Index(index).
+                Index(index).                  //在哪一个index（database）中
                 Query(query).
                 Pretty(true).
                 Do(context.Background())
@@ -741,7 +742,7 @@ func write(client *storage.Client, bucket, object string) error {
 }
 
 //项目代码
-//把媒体文件存储在数据库中
+//把媒体文件存储在GCS中并返回url
 func saveToGCS(r io.Reader, objectName string) (string, error) {    //r：要存储的文件；objectName：网盘中object的名字；string：图片或视频存储成功后返回的检索链接
         ctx := context.Background()
         client, err := storage.NewClient(ctx)
@@ -785,11 +786,12 @@ package main
 import (
         "context"
         "fmt"
-        vision "cloud.google.com/go/vision/apiv1"  //
+        vision "cloud.google.com/go/vision/apiv1"  //重命名为vision
 )
 
+//判断一张照片里有人脸的概率
 // Annotate an image file based on Cloud Vision API, return score and error if exists.
-func annotate(uri string) (float32, error) {
+func annotate(uri string) (float32, error) {    //人脸概率float32，GCE内部操作使用的是internal url，内部操作协同工作比较简单
         ctx := context.Background()
         client, err := vision.NewImageAnnotatorClient(ctx)
         if err != nil {
@@ -797,8 +799,8 @@ func annotate(uri string) (float32, error) {
         }
         defer client.Close()
 
-        image := vision.NewImageFromURI(uri)
-        annotations, err := client.DetectFaces(ctx, image, nil, 1)
+        image := vision.NewImageFromURI(uri)    //通过url读取文件，内部操作协同工作比较简单
+        annotations, err := client.DetectFaces(ctx, image, nil, 1)   //返回detect结果
         if err != nil {
                 return 0.0, err
         }
@@ -806,8 +808,124 @@ func annotate(uri string) (float32, error) {
                 fmt.Println("No faces found.")
                 return 0.0, nil
         }
-        return annotations[0].DetectionConfidence, nil
+        return annotations[0].DetectionConfidence, nil    //DetectionConfidence得到第一个人脸对应的概率
 }
+
+HTTP Multipart Request
+An HTTP multipart request is an HTTP request that HTTP clients construct to send files and data over to an HTTP Server. 
+It is commonly used by browsers and HTTP clients to upload files to the server. 
+The content-type "multipart/form-data" should be used for submitting forms that contain files, non-ASCII data, and binary data.
+
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "io"
+    "log"
+    "net/http"
+    "path/filepath"     //通过文件后缀判断是图片还是视频
+    "reflect"
+    "strconv"
+
+    "cloud.google.com/go/storage"
+    "github.com/olivere/elastic"
+    "github.com/pborman/uuid"
+)
+var (        //不同的后缀映射成不同的文件类型
+        mediaTypes = map[string]string{
+                ".jpeg": "image",
+                ".jpg":  "image",
+                ".gif":  "image",
+                ".png":  "image",
+                ".mov":  "video",
+                ".mp4":  "video",
+                ".avi":  "video",
+                ".flv":  "video",
+                ".wmv":  "video",
+        }
+
+//把用户发布的post信息存储在数据库中
+func saveToES(post *Post, index string, id string) error {
+        client, err := elastic.NewClient(elastic.SetURL(ES_URL))
+        if err != nil {
+                return err
+        }
+
+        _, err = client.Index().   //往数据库中存数据的API index相当于insert
+                Index(index).
+                Id(id).                   //primary key
+                BodyJson(post).           //BodyJson是什么？
+                Do(context.Background())
+
+        if err != nil {
+                return err
+        }
+	
+        fmt.Printf("Post is saved to index: %s\n", post.Message)
+        return nil
+}
+
+//处理用户新发布的post：0.Read parameter from client 1.save image to GCS 2.annotate image with vision api 3.save post to ES
+func handlerPost(w http.ResponseWriter, r *http.Request) {
+        fmt.Println("Received one post request")
+        w.Header().Set("Content-Type", "application/json")
+
+        lat, _ := strconv.ParseFloat(r.FormValue("lat"), 64)
+        lon, _ := strconv.ParseFloat(r.FormValue("lon"), 64)
+
+        p := &Post{
+                User:    r.FormValue("user"),
+                Message: r.FormValue("message"),
+                Location: Location{
+                        Lat: lat,
+                        Lon: lon,
+                },
+        }
+
+        file, header, err := r.FormFile("image")
+        if err != nil {
+                http.Error(w, "Image is not available", http.StatusBadRequest)
+                fmt.Printf("Image is not available %v\n", err)
+                return
+        }
+
+        suffix := filepath.Ext(header.Filename)
+        if t, ok := mediaTypes[suffix]; ok {
+                p.Type = t
+        } else {
+                p.Type = "unknown"
+        }
+
+        id := uuid.New()
+        mediaLink, err := saveToGCS(file, id)
+        if err != nil {
+                http.Error(w, "Failed to save image to GCS", http.StatusInternalServerError)
+                fmt.Printf("Failed to save image to GCS %v\n", err)
+                return
+        }
+        p.Url = mediaLink
+
+        if p.Type == "image" {
+                uri := fmt.Sprintf("gs://%s/%s", BUCKET_NAME, id)
+                if score, err := annotate(uri); err != nil {
+                        http.Error(w, "Failed to annotate image", http.StatusInternalServerError)
+                        fmt.Printf("Failed to annotate the image %v\n", err)
+                        return
+                } else {
+                        p.Face = score
+                }
+        }
+
+        err = saveToES(p, POST_INDEX, id)
+        if err != nil {
+                http.Error(w, "Failed to save post to Elasticsearch", http.StatusInternalServerError)
+                fmt.Printf("Failed to save post to Elasticsearch %v\n", err)
+                return
+        }
+}
+
+
 
 
 
