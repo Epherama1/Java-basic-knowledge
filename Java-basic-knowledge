@@ -870,14 +870,15 @@ func saveToES(post *Post, index string, id string) error {
 func handlerPost(w http.ResponseWriter, r *http.Request) {
         fmt.Println("Received one post request")
         w.Header().Set("Content-Type", "application/json")
-
-        lat, _ := strconv.ParseFloat(r.FormValue("lat"), 64)
+	
+	
+        lat, _ := strconv.ParseFloat(r.FormValue("lat"), 64)  //参数的读取不是通过URL，而是通过body，格式上也不是Json数据，是form data的格式，因为参数内既有文字也有文件
         lon, _ := strconv.ParseFloat(r.FormValue("lon"), 64)
 
-        p := &Post{
+        p := &Post{                          //通过目前已知的参数初始化一个post对象，不知道的部分先空着
                 User:    r.FormValue("user"),
                 Message: r.FormValue("message"),
-                Location: Location{
+                Location: Location{          //Location是开始自己建的结构体
                         Lat: lat,
                         Lon: lon,
                 },
