@@ -544,7 +544,7 @@ func main() {
 func handlerPost(w http.ResponseWriter, r *http.Request) {     //serverlet类似，处理http request并将结果写入response    这是干啥用的？
         // Parse from body of request to get a json object.
         fmt.Println("Received one post request")
-        decoder := json.NewDecoder(r.Body)       //准备把Jason的数据转换为其他格式
+        decoder := json.NewDecoder(r.Body)       //准备把Json的数据转换为其他格式
         var p Post                               //Go数据格式
         if err := decoder.Decode(&p); err != nil {     //转换
                 panic(err)
@@ -954,6 +954,281 @@ func handlerCluster(w http.ResponseWriter, r *http.Request) {
         }
         w.Write(js)
 }
+
+目前无法区别get请求还是post请求，一个handler对应一个/****
+
+    r := mux.NewRouter()       //通过第三方库来实现post、get分离，若不匹配则返回http 405
+
+    r.Handle("/post", http.HandlerFunc(handlerPost)).Methods("POST", "OPTIONS")
+    r.Handle("/search", http.HandlerFunc(handlerSearch)).Methods("GET", "OPTIONS")
+    r.Handle("/cluster", http.HandlerFunc(handlerCluster)).Methods("GET", "OPTIONS")
+
+    log.Fatal(http.ListenAndServe(":8080", r))
+
+//前后端程序都存在EC2里，但现实生活中可能存在不同的地方
+每一个handler都要加这一部分：
+w.Header().Set("Access-Control-Allow-Origin", "*")  //后端通过header告诉前端是否允许其跨域访问，*代表允许所有，或者只写前端的domain
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")    //
+
+    if r.Method == "OPTIONS" {     //发送真正的请求之前，通过发送一条option请求来查看后端是否允许跨域访问（是否返回w.Header().Set("Access-Control-Allow-Origin", "*")），类似于握手
+        return                      //浏览器知道什么时候该发option还是get
+    }
+
+Session-Based Authentication
+How it works
+后端只返回session ID给前端
+A user enters their login credentials (username + password).
+The server verifies the credentials are correct and creates a session which is then stored in a database.
+Client-side stores the session ID returned from the server      //session ID存储在浏览器的cookie中
+On subsequent requests, the session ID is verified against the database and if valid the request is processed.
+Once a user logs out of the app, the session is destroyed on the server-side.
+//若cookie被盗：加ip限制，不允许在另一台电脑上登陆
+//登出的时候需要server端销毁所有的session信息
+
+Token-Based Authentication
+How it works
+token会返回完整的信息给前端
+A user enters their login credentials (=username + password).
+The server verifies the credentials are correct and created an encrypted and signed token with a private key ( { username: “vincent”, exp: “2019/1/9/10:00” }, private key => token). 
+Client-side stores the token returned from the server.
+On subsequent requests, the token is decoded with the same private key and if valid the request is processed.
+Once a user logs out, the token is destroyed client-side, no interaction with the server is necessary.
+//token不需要存储在server端，只在前端销毁token即可
+
+//session和token里不需要包含密码信息，在生成的时候判断好了就行了
+Advantages of Token-Based Authentication
+Stateless, Scalable and Decoupled
+Stateless: The back-end does not need to keep a record of tokens. 
+Self-contained, containing all the data required to check its validity. No DB lookup is needed. 
+Mobile Friendly
+Native mobile platforms and cookies do not mix well. With a session-based approach, you simply store the session ID in a cookie. 
+Disadvantages of Token-Based Authentication：
+The size of a token is usually larger than a session id.
+token中每个用户的key都是一样的，一百万个用户同时登陆服务器没有压力。但如果是session的话，就要存一百万个sessionID存在server。
+生成session之后，需要同步到数据库的每一个copy里
+
+
+        exists, err = client.IndexExists(USER_INDEX).Do(context.Background())    //新建一个库用来存储User的用户名和密码
+        if err != nil {
+                panic(err)
+        }
+
+        if !exists {
+                mapping := `{
+                        "mappings": {
+                                "properties": {
+                                        "username": {"type": "keyword"},     //根据username检索这个人存不存在
+                                        "password": {"type": "keyword", "index": false},
+                                        "age":      {"type": "long", "index": false},
+                                        "gender":   {"type": "keyword", "index": false}
+                                }
+                        }
+                }`
+                _, err = client.CreateIndex(USER_INDEX).Body(mapping).Do(context.Background())
+                if err != nil {
+                        panic(err)
+                }
+        }
+
+//更新SaveToES使得其不只能存post，还能存user，使之generalize
+func saveToES(i interface{}, index string, id string) error {   //用interface代表所有类型的数据
+        client, err := elastic.NewClient(elastic.SetURL(ES_URL))
+        if err != nil {
+                return err
+        }
+
+        _, err = client.Index().
+                Index(index).
+                Id(id).
+                BodyJson(i).
+                Do(context.Background())
+
+        if err != nil {
+                return err
+        }
+
+        return nil
+}
+
+User.go:
+
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "reflect"
+    "regexp"
+    "time"
+     jwtmiddleware "github.com/auth0/go-jwt-middleware"       
+     jwt "github.com/dgrijalva/jwt-go"
+
+    jwt "github.com/dgrijalva/jwt-go"     //JWT建立token
+    "github.com/olivere/elastic"
+)
+const (
+    USER_INDEX = "user"
+)
+
+type User struct {
+    Username string `json:"username"`
+    Password string `json:"password"`
+    Age      int64  `json:"age"`
+    Gender   string `json:"gender"`
+}
+var mySigningKey = []byte("secret")  //加密密钥
+
+func checkUser(username, password string) (bool, error) {     //判断一个用户存不存在
+        query := elastic.NewTermQuery("username", username)
+        searchResult, err := readFromES(query, USER_INDEX)    //通过用户名读数据
+        if err != nil {
+                return false, err
+        }
+
+        var utype User
+        for _, item := range searchResult.Each(reflect.TypeOf(utype)) {   //判断密码是否匹配
+                u := item.(User)               //item转换成user格式
+                if u.Password == password {
+                        fmt.Printf("Login as %s\n", username)
+                        return true, nil
+                }
+        }
+        return false, nil
+}
+
+func addUser(user *User) (bool, error) {
+        query := elastic.NewTermQuery("username", user.Username)
+        searchResult, err := readFromES(query, USER_INDEX)
+        if err != nil {
+                return false, err
+        }
+
+        if searchResult.TotalHits() > 0 {    //通过查看result结果个数是不是0来判断该用户名有没有注册过
+                return false, nil
+        }
+
+        err = saveToES(user, USER_INDEX, user.Username)
+        if err != nil {
+                return false, err
+        }
+        fmt.Printf("User is added: %s\n", user.Username)
+        return true, nil
+}
+
+func handlerLogin(w http.ResponseWriter, r *http.Request) {    //为什么传入参数一个是pointer一个不是？responsewriter是interface类型，不存在pointer的概念
+        fmt.Println("Received one login request")
+        w.Header().Set("Content-Type", "text/plain")
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+
+        if r.Method == "OPTIONS" {
+                return
+        }
+
+        //  Get User information from client
+        decoder := json.NewDecoder(r.Body)      //把Json数据转换成相应的格式
+        var user User
+        if err := decoder.Decode(&user); err != nil {     //转换成User的格式
+                http.Error(w, "Cannot decode user data from client", http.StatusBadRequest)
+                fmt.Printf("Cannot decode user data from client %v\n", err)
+                return
+        }
+
+        exists, err := checkUser(user.Username, user.Password)     //判断用户是否存在
+        if err != nil {
+                http.Error(w, "Failed to read user from Elasticsearch", http.StatusInternalServerError)  //是否有错误
+                fmt.Printf("Failed to read user from Elasticsearch %v\n", err)
+                return
+        }
+
+        if !exists {     //若用户不存在
+                http.Error(w, "User doesn't exists or wrong password", http.StatusUnauthorized)
+                fmt.Printf("User doesn't exists or wrong password\n")
+                return
+        }
+	//生成token：
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{   //claim就是payload，HS256加密算法
+                "username": user.Username,                                 //payload内容
+                "exp":      time.Now().Add(time.Hour * 24).Unix(),         //过期时间，time.Now:token 生成的时间
+        })
+	
+	
+        tokenString, err := token.SignedString(mySigningKey)      //通过密钥加密，tokenString就是加密之后的token
+        if err != nil {
+                http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+                fmt.Printf("Failed to generate token %v\n", err)
+                return
+        }
+
+        w.Write([]byte(tokenString))     //把token信息写到response body里返回给前端
+}
+
+func handlerSignup(w http.ResponseWriter, r *http.Request) {
+        fmt.Println("Received one signup request")
+        w.Header().Set("Content-Type", "text/plain")
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+
+        if r.Method == "OPTIONS" {
+                return
+        }
+
+        decoder := json.NewDecoder(r.Body)    //把Json数据转换成相应的格式
+        var user User
+        if err := decoder.Decode(&user); err != nil {  //转换成User的格式
+                http.Error(w, "Cannot decode user data from client", http.StatusBadRequest)
+                fmt.Printf("Cannot decode user data from client %v\n", err)
+                return
+        }
+
+        if user.Username == "" || user.Password == "" || regexp.MustCompile(`^[a-z0-9]$`).MatchString(user.Username) {   //判断username和password是否符合要求，不能为空，字符要求
+                http.Error(w, "Invalid username or password", http.StatusBadRequest)
+                fmt.Printf("Invalid username or password\n")
+                return
+        }
+
+        success, err := addUser(&user)     //把用户添加到数据库中
+        if err != nil {
+                http.Error(w, "Failed to save user to Elasticsearch", http.StatusInternalServerError)
+                fmt.Printf("Failed to save user to Elasticsearch %v\n", err)
+                return
+        }
+
+        if !success {
+                http.Error(w, "User already exists", http.StatusBadRequest)
+                fmt.Println("User already exists")
+                return
+	 }
+        fmt.Printf("User added successfully: %s.\n", user.Username)
+}
+
+后台API各自验证token
+
+func main() {
+    fmt.Println("started-service")
+    
+    jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{       //用密钥mySigningKey和加密算法jwt.SigningMethodHS256来定义一个jwtMiddleware
+        ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+     	 return []byte(mySigningKey), nil
+        },
+        SigningMethod: jwt.SigningMethodHS256,
+   })
+
+   r := mux.NewRouter()
+
+   r.Handle("/post", jwtMiddleware.Handler(http.HandlerFunc(handlerPost))).Methods("POST", "OPTIONS")
+   r.Handle("/search", jwtMiddleware.Handler(http.HandlerFunc(handlerSearch))).Methods("GET", "OPTIONS")
+   r.Handle("/cluster", jwtMiddleware.Handler(http.HandlerFunc(handlerCluster))).Methods("GET", "OPTIONS")
+   r.Handle("/signup", http.HandlerFunc(handlerSignup)).Methods("POST", "OPTIONS")    //不用token，因为是token创建的过程
+   r.Handle("/login", http.HandlerFunc(handlerLogin)).Methods("POST", "OPTIONS")      //不用token，因为是token创建的过程
+
+   log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+handlerPost函数更新：                    //通过token拿到用户信息
+user := r.Context().Value("user")
+    claims := user.(*jwt.Token).Claims                //得到token信息
+    username := claims.(jwt.MapClaims)["username"]    //得到token里的username
+
 
 
 
