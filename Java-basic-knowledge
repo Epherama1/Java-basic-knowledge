@@ -1229,6 +1229,14 @@ user := r.Context().Value("user")
     claims := user.(*jwt.Token).Claims                //得到token信息
     username := claims.(jwt.MapClaims)["username"]    //得到token里的username
 
+Google Kubernetes Engine
+用来将多个计算机联合形成分布式系统
+Controllers --- programs that maintains the state of the cluster
+Etcd --- cluster state coordination   //可以快速访问的小数据库，用来处理process moment时各个计算机不同步的问题
+Scheduler --- program that finds the right node(s) to deploy your application(s)    //当任务来临时，安排用哪些node来处理这个任务
+API Service --- Central component that coordinates the communication between different components
+Kubelet -  communicates with the Kubernetes Master
+Kube-proxy - a network proxy which reflects Kubernetes networking services on each node.
 
 
 
