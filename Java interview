@@ -7,6 +7,211 @@
 所以说，散列技术既是一种存储方法，也是一种查找方法。然而它与线性表、树、图等结构不同的是，前面几种结构，数据元素之间都存在某种逻辑关系，可以用连线图示表示出来，而散列技术的记录之间不存在什么逻辑关系，它只与关键字有关联。因此，散列主要是面向查找的存储结构。
 我们时常会碰到两个关键字key1 != key2，但是却有f(key1) = f(key2)，这种现象我们称为哈希冲突,如果没有哈希冲突,散列表是一种非常高效的查找数据结构,其时间复杂度为O(1);
 
+byte/8
+char/16
+short/16
+int/32
+long/64
+float/32
+double/64
+boolen/可以用1 bit来存储，但具体大小没有限制，JVM在编译时会将boolean转为int的1和0
+
+自动装箱就是Java自动将原始类型值转换成对应的对象，比如将int的变量转换成Integer对象，这个过程叫做装箱，反之将Integer对象转换成int类型值，这个过程叫做拆箱。
+自动装箱和拆箱在Java中很常见，比如我们有一个方法，接受一个对象类型的参数，如果我们传递一个原始类型值，那么Java会自动讲这个原始类型值转换成与之对应的对象。
+最经典的一个场景就是当我们向ArrayList这样的容器中增加原始类型数据时或者是创建一个参数化的类
+ArrayList<Integer> intList = new ArrayList<Integer>();
+intList.add(1); //autoboxing - primitive to object
+intList.add(2); //autoboxing
+自动装箱主要发生在两种情况，一种是赋值时，另一种是在方法调用的时候。
+Integer x = 2;     // 装箱 调用了 Integer.valueOf(2)
+int y = x;         // 拆箱 调用了 X.intValue()
+在一个循环中进行自动装箱操作的情况，如下面的例子就会创建多余的对象，影响程序的性能。
+Integer sum = 0;
+ for(int i=1000; i<5000; i++){
+   sum+=i;
+}但是+这个操作符不适用于Integer对象，首先sum进行自动拆箱操作，进行数值相加操作，最后发生自动装箱操作转换成Integer对象。
+
+new Integer(123) 每次都会新建一个对象；
+Integer.valueOf(123) 会使用缓存池中的对象，多次调用会取得同一个对象的引用。
+Integer x = new Integer(123);
+Integer y = new Integer(123);
+System.out.println(x == y);    // false
+Integer z = Integer.valueOf(123);
+Integer k = Integer.valueOf(123);
+System.out.println(z == k);   // true
+
+valueOf() 方法的实现比较简单，就是先判断值是否在缓存池中，如果在的话就直接返回缓存池的内容。在 Java 8 中，Integer 缓存池的大小默认为 -128~127。
+编译器会在自动装箱过程调用 valueOf() 方法，因此多个值相同且值在缓存池范围内的 Integer 实例使用自动装箱来创建，那么就会引用相同的对象。
+Integer m = 123;
+Integer n = 123;
+System.out.println(m == n); // true
+Integer 的缓冲池 IntegerCache 很特殊，这个缓冲池的下界是 - 128，上界默认是 127，但是这个上界是可调的
+
+String 被声明为 final，因此它不可被继承。(Integer 等包装类也不能被继承）
+在 Java 8 中，String 内部使用 char 数组存储数据。在 Java 9 之后，String 类的实现改用 byte 数组存储字符串，同时使用 coder 来标识使用了哪种编码。
+value 数组被声明为 final，这意味着 value 数组初始化之后就不能再引用其它数组（？？？）。并且 String 内部没有改变 value 数组的方法，因此可以保证 String 不可变。
+
+不可变的好处
+1. 可以缓存 hash 值
+因为 String 的 hash 值经常被使用，例如 String 用做 HashMap 的 key。不可变的特性可以使得 hash 值也不可变，因此只需要进行一次计算。
+
+2. String Pool 的需要
+如果一个 String 对象已经被创建过了，那么就会从 String Pool 中取得引用。只有 String 是不可变的，才可能使用 String Pool。
+
+3. 安全性
+String 经常作为参数，String 不可变性可以保证参数不可变。例如在作为网络连接参数的情况下如果 String 是可变的，那么在网络连接过程中，String 被改变，改变 String 的那一方以为现在连接的是其它主机，而实际情况却不一定是。
+
+4. 线程安全
+String 不可变性天生具备线程安全，可以在多个线程中安全地使用。StringBuffer 和 StringBuilder 可变。StringBuilder 不是线程安全的。StringBuffer 是线程安全的，内部使用 synchronized 进行同步
+
+String、StringBuffer和StringBuilder：
+1.都是final类，都不允许被继承；
+2.String类长度是不可变的，StringBuffer和StringBuilder类长度是可以改变的；
+3.StringBuffer类是线程安全的，StringBuilder不是线程安全的；
+
+String和StringBuffer
+1、String类型和StringBuffer类型的主要性能区别：String是不可变的对象，因此每次在对String类进行改变的时候都会生成一个新的string对象，然后将指针指向新的string对象，
+所以经常要改变字符串长度的话不要使用string，因为每次生成对象都会对系统性能产生影响，特别是当内存中引用的对象多了以后，JVM的GC就会开始工作，性能就会降低；
+2、使用StringBuffer类时，每次都会对StringBuffer对象本身进行操作，而不是生成新的对象并改变对象引用，所以多数情况下推荐使用StringBuffer，特别是字符串对象经常要改变的情况；
+3、在某些情况下，String对象的字符串拼接其实是被Java Compiler编译成了StringBuffer对象的拼接，所以这些时候String对象的速度并不会比StringBuffer对象慢
+
+StringBuilder
+此类提供一个与 StringBuffer 兼容的 API，但不保证同步。该类被设计用作 StringBuffer 的一个简易替换，用在字符串缓冲区被单个线程使用的时候（这种情况很普遍）。
+如果可能，建议优先采用该类，因为在大多数实现中，它比 StringBuffer 要快。
+相同情况下使用 StirngBuilder 相比使用 StringBuffer 仅能获得 10%~15% 左右的性能提升，但却要冒多线程不安全的风险。
+而在现实的模块化编程中，负责某一模块的程序员不一定能清晰地判断该模块是否会放入多线程的环境中运行，因此：除非确定系统的瓶颈是在 StringBuffer 上，并且确定你的模块不会运行在多线程模式下，才可以采用StringBuilder；否则还是用StringBuffer
+
+1、基本原则：如果要操作少量的数据，用String ；单线程操作大量数据，用StringBuilder ；多线程操作大量数据，用StringBuffer。
+2、不要使用String类的”+”来进行频繁的拼接，因为那样的性能极差的，应该使用StringBuffer或StringBuilder类
+3、 StringBuilder一般使用在方法内部来完成类似”+”功能，因为是线程不安全的，所以用完以后可以丢弃。StringBuffer主要用在全局变量中
+
+String Pool
+字符串常量池（String Pool）保存着所有字符串字面量（literal strings），这些字面量在编译时期就确定。不仅如此，还可以使用 String 的 intern() 方法在运行过程将字符串添加到 String Pool 中。
+当一个字符串调用 intern() 方法时，如果 String Pool 中已经存在一个字符串和该字符串值相等（使用 equals() 方法进行确定），那么就会返回 String Pool 中字符串的引用；否则，就会在 String Pool 中添加一个新的字符串，并返回这个新字符串的引用。
+下面示例中，s1 和 s2 采用 new String() 的方式新建了两个不同字符串，而 s3 和 s4 是通过 s1.intern() 和 s2.intern() 方法取得同一个字符串引用。intern() 首先把 "aaa" 放到 String Pool 中，然后返回这个字符串引用，因此 s3 和 s4 引用的是同一个字符串。
+String s1 = new String("aaa");
+String s2 = new String("aaa");
+System.out.println(s1 == s2);           // false
+String s3 = s1.intern();
+String s4 = s2.intern();
+System.out.println(s3 == s4);           // true
+如果是采用 "bbb" 这种字面量的形式创建字符串，会自动地将字符串放入 String Pool 中。
+String s5 = "bbb";
+String s6 = "bbb";
+System.out.println(s5 == s6);  // true
+在 Java 7 之前，String Pool 被放在运行时常量池中，它属于永久代。而在 Java 7，String Pool 被移到堆中。这是因为永久代的空间有限，在大量使用字符串的场景下会导致 OutOfMemoryError 错误。
+
+new String("abc")
+使用这种方式一共会创建两个字符串对象（前提是 String Pool 中还没有 "abc" 字符串对象）。
+"abc" 属于字符串字面量，因此编译时期会在 String Pool 中创建一个字符串对象，指向这个 "abc" 字符串字面量；
+而使用 new 的方式会在堆中创建一个字符串对象。
+
+参数传递（？？？看cyc2018）
+在将一个参数传入一个方法时，本质上是将对象的地址以值的方式传递到形参中。
+但是在方法中将指针引用了其它对象，那么此时方法里和方法外的两个指针指向了不同的对象，在一个指针改变其所指向对象的内容对另一个指针所指向的对象没有影响。
+
+Java 不能隐式执行向下转型
+1.1 字面量属于 double 类型，不能直接将 1.1 直接赋值给 float 变量。1.1f 字面量才是 float 类型。
+
+因为字面量 1 是 int 类型，它比 short 类型精度要高，因此不能隐式地将 int 类型向下转型为 short 类型。
+short s1 = 1; s1 = s1 + 1;  //不允许
+但是使用 += 或者 ++ 运算符会执行隐式类型转换。s1 += 1; s1++; 相当于将 s1 + 1 的计算结果进行了向下转型：s1 = (short) (s1 + 1);
+
+从 Java 7 开始，可以在 switch 条件判断语句中使用 String 对象。switch 不支持 long、float、double。
+
+final：
+1.数据
+对于基本类型，final 使数值不变；
+对于引用类型，final 使引用不变，也就不能引用其它对象，但是被引用的对象本身是可以修改的。
+2. 方法
+声明方法不能被子类重写。
+private 方法隐式地被指定为 final，如果在子类中定义的方法和基类中的一个 private 方法签名相同，此时子类的方法不是重写基类方法，而是在子类中定义了一个新的方法。
+3. 类
+声明类不允许被继承。
+
+static
+1. 静态变量
+静态变量：又称为类变量，也就是说这个变量属于类的，类所有的实例都共享静态变量，可以直接通过类名来访问它。静态变量在内存中只存在一份。
+实例变量：每创建一个实例就会产生一个实例变量，它与该实例同生共死。
+2. 静态方法
+静态方法在类加载的时候就存在了，它不依赖于任何实例。所以静态方法必须有实现，也就是说它不能是抽象方法。
+只能访问所属类的静态字段和静态方法，方法中不能有 this 和 super 关键字，因为这两个关键字与具体对象关联。
+3. 静态语句块
+静态语句块在类初始化时运行一次。
+public class A {
+    static {
+        System.out.println("123");
+    }
+
+    public static void main(String[] args) {
+        A a1 = new A();
+        A a2 = new A();
+    }
+}只打印出一个123，只在第一次打印
+4. 静态内部类（？？？）
+非静态内部类依赖于外部类的实例，也就是说需要先创建外部类实例，才能用这个实例去创建非静态内部类。而静态内部类不需要。
+静态内部类不能访问外部类的非静态的变量和方法。
+6. 初始化顺序
+静态变量和静态语句块优先于实例变量和普通语句块，静态变量和静态语句块的初始化顺序取决于它们在代码中的顺序。
+存在继承的情况下，初始化顺序为：
+父类（静态变量、静态语句块）
+子类（静态变量、静态语句块）
+父类（实例变量、普通语句块）
+父类（构造函数）
+子类（实例变量、普通语句块）
+子类（构造函数）
+
+
+原子性：
+这一点，跟数据库事务的原子性概念差不多，即一个操作（有可能包含有多个子操作）要么全部执行（生效），要么全部都不执行（都不生效）。
+使用锁。可以保证同一时间只有一个线程能拿到锁，也就保证了同一时间只有一个线程能执行申请锁和释放锁之间的代码。
+同步代码块。使用非静态同步方法时，锁住的是当前实例；使用静态同步方法时，锁住的是该类的Class对象；使用静态代码块时，锁住的是synchronized关键字后面括号内的对象。
+通过锁来实现资源的排它性，从而实际目标代码段同一时间只会被一个线程执行，进而保证了目标代码段的原子性。这是一种以牺牲性能为代价的方法。
+CAS（compare and swap）：CPU级别的指令，其开销比需要操作系统参与的锁的开销小。AtomicInteger这种的类。
+（？？？搜具体应用中的代码）
+
+可见性：
+可见性是指，当多个线程并发访问共享变量时，一个线程对共享变量的修改，其它线程能够立即看到。
+当使用volatile修饰某个变量时，它会保证对该变量的修改会立即被更新到内存中，并且将其它缓存中对该变量的缓存设置成无效，因此其它线程需要读取该值时必须从主内存中读取，从而得到最新的值。
+volatile适用于不需要保证原子性，但却需要保证可见性的场景。
+
+顺序性：
+顺序性指的是，程序执行的顺序按照代码的先后顺序执行。
+但实际上JVM真正在执行这段代码时，并不保证它们一定完全按照此顺序执行。处理器为了提高程序整体的执行效率，可能会对代码进行优化，其中的一项优化方式就是调整代码顺序，按照更高效的顺序执行代码。
+CPU虽然并不保证完全按照代码顺序执行，但它会保证程序最终的执行结果和代码顺序执行时的结果一致。
+重新排序过程并不会影响单线程程序的执行，却可能影响多线程程序并发执行的正确性。
+Java中可通过volatile在一定程序上保证顺序性，另外还可以通过synchronized和锁来保证顺序性。synchronized和锁保证顺序性的原理和保证原子性一样，都是通过保证同一时间只会有一个线程执行目标代码段来实现的。
+除了从应用层面保证目标代码段执行的顺序性外，JVM还通过被称为happens-before原则隐式地保证顺序性。
+happens-before原则（先行发生原则）
+传递规则：如果操作1在操作2前面，而操作2在操作3前面，则操作1肯定会在操作3前发生。该规则说明了happens-before原则具有传递性
+锁定规则：一个unlock操作肯定会在后面对同一个锁的lock操作前发生。这个很好理解，锁只有被释放了才会被再次获取
+volatile变量规则：对一个被volatile修饰的写操作先发生于后面对该变量的读操作
+程序次序规则：一个线程内，按照代码顺序执行
+线程启动规则：Thread对象的start()方法先发生于此线程的其它动作
+线程终结原则：线程的终止检测后发生于线程中其它的所有操作
+线程中断规则： 对线程interrupt()方法的调用先发生于对该中断异常的获取
+对象终结规则：一个对象构造先于它的finalize发生
+
+问：平时项目中使用锁和synchronized比较多，而很少使用volatile，难道就没有保证可见性？
+答：锁和synchronized即可以保证原子性，也可以保证可见性。都是通过保证同一时间只有一个线程执行目标代码段来实现的。
+问：锁和synchronized为何能保证可见性？
+答：根据JDK 7的Java doc中对concurrent包的说明，一个线程的写结果保证对另外线程的读操作可见，只要该写操作可以由happen-before原则推断出在读操作之前发生。
+问：既然锁和synchronized即可保证原子性也可保证可见性，为何还需要volatile？
+答：synchronized和锁需要通过操作系统来仲裁谁获得锁，开销比较高，而volatile开销小很多。因此在只需要保证可见性的条件下，使用volatile的性能要比使用锁和synchronized高得多。
+问：既然锁和synchronized可以保证原子性，为什么还需要AtomicInteger这种的类来保证原子操作？
+答：锁和synchronized需要通过操作系统来仲裁谁获得锁，开销比较高，而AtomicInteger是通过CPU级的CAS操作来保证原子性，开销比较小。所以使用AtomicInteger的目的还是为了提高性能。
+问：还有没有别的办法保证线程安全
+答：有。尽可能避免引起非线程安全的条件——共享变量。如果能从设计上避免共享变量的使用，即可避免非线程安全的发生，也就无须通过锁或者synchronized以及volatile解决原子性、可见性和顺序性的问题。
+问：synchronized即可修饰非静态方式，也可修饰静态方法，还可修饰代码块，有何区别
+答：synchronized修饰非静态同步方法时，锁住的是当前实例；synchronized修饰静态同步方法时，锁住的是该类的Class对象；synchronized修饰静态代码块时，锁住的是synchronized关键字后面括号内的对象。
+
+
+
+
+
+
+
+
 
 
 
