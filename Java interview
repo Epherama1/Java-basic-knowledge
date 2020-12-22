@@ -162,6 +162,64 @@ public class A {
 子类（构造函数）
 
 
+equals()
+1. 等价关系
+两个对象具有等价关系，需要满足以下五个条件：
+Ⅰ 自反性
+x.equals(x); // true
+Ⅱ 对称性
+x.equals(y) == y.equals(x); // true
+Ⅲ 传递性
+if (x.equals(y) && y.equals(z))
+    x.equals(z); // true;
+Ⅳ 一致性
+多次调用 equals() 方法结果不变
+x.equals(y) == x.equals(y); // true
+Ⅴ 与 null 的比较
+对任何不是 null 的对象 x 调用 x.equals(null) 结果都为 false
+x.equals(null); // false;
+
+2. 等价与相等
+对于基本类型，== 判断两个值是否相等，基本类型没有 equals() 方法。
+对于引用类型，== 判断两个变量是否引用同一个对象，而 equals() 判断引用的对象是否等价。（？？？什么叫是否等价？）
+Integer x = new Integer(1);
+Integer y = new Integer(1);
+System.out.println(x.equals(y)); // true
+System.out.println(x == y);      // false
+
+3. 实现
+检查是否为同一个对象的引用，如果是直接返回 true；
+检查是否是同一个类型，如果不是，直接返回 false；
+将 Object 对象进行转型；
+判断每个关键域是否相等。（？？？）
+
+
+hashCode()
+hashCode() 返回哈希值，而 equals() 是用来判断两个对象是否等价。等价的两个对象散列值一定相同，但是散列值相同的两个对象不一定等价，这是因为计算哈希值具有随机性，两个值不同的对象可能计算出相同的哈希值。
+HashSet 和 HashMap 等集合类使用了 hashCode() 方法来计算对象应该存储的位置，因此要将对象添加到这些集合类中，需要让对应的类实现 hashCode() 方法。
+下面的代码中，新建了两个等价的对象，并将它们添加到 HashSet 中。我们希望将这两个对象当成一样的，只在集合中添加一个对象。但是 EqualExample 没有实现 hashCode() 方法，因此这两个对象的哈希值是不同的，最终导致集合添加了两个等价的对象。
+
+clone()
+1. cloneable
+clone() 是 Object 的 protected 方法，它不是 public，一个类不显式去重写 clone()，其它类就不能直接去调用该类实例的 clone() 方法。
+clone() 方法并不是 Cloneable 接口的方法，而是 Object 的一个 protected 方法。Cloneable 接口只是规定，如果一个类没有实现 Cloneable 接口又调用了 clone() 方法，就会抛出 CloneNotSupportedException。
+2. 浅拷贝
+拷贝对象和原始对象的引用类型引用同一个对象。
+3. 深拷贝
+拷贝对象和原始对象的引用类型引用不同对象。
+4. clone() 的替代方案
+可以使用拷贝构造函数或者拷贝工厂来拷贝一个对象。
+
+继承（？？？）
+Java 中有三个访问权限修饰符：private、protected 以及 public，如果不加访问修饰符，表示包级可见。
+
+抽象：
+抽象类和抽象方法都使用 abstract 关键字进行声明。如果一个类中包含抽象方法，那么这个类必须声明为抽象类。
+抽象类和普通类最大的区别是，抽象类不能被实例化，只能被继承。
+
+接口（
+
+
 原子性：
 这一点，跟数据库事务的原子性概念差不多，即一个操作（有可能包含有多个子操作）要么全部执行（生效），要么全部都不执行（都不生效）。
 使用锁。可以保证同一时间只有一个线程能拿到锁，也就保证了同一时间只有一个线程能执行申请锁和释放锁之间的代码。
