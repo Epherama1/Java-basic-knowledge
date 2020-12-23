@@ -353,8 +353,18 @@ HashMap（？？？）
 
 
 
+volatile：
+volatile的作用就是当一个线程更新某个volatile声明的变量时，会通知其他的cpu使缓存失效，从而其他cpu想要做更新操作时，需要从内存重新读取数据。
+具体的通知方式，一种是通过某种协议，比如MESI；再就是对总线加锁，控制变量的读取。
+volatile只能保证变量的可见性、有序性，但是不能保证原子性。因此可以用它来做double-check，但是不能来做i++的操作。如果想要实现i++的可靠性，必须依赖于synchronized、lock或者atomicXXX来实现。
 
-
+线程安全：
+1.不可变（Immutable）的对象一定是线程安全的：
+final 关键字修饰的基本数据类型
+String
+枚举类型
+Number 部分子类，如 Long 和 Double 等数值包装类型，BigInteger 和 BigDecimal 等大数据类型。但同为 Number 的原子类 AtomicInteger 和 AtomicLong 则是可变的。
+对于集合类型，可以使用 Collections.unmodifiableXXX() 方法来获取一个不可变的集合。
 
 如果一个对象可以完全地被多个线程同时使用，那它就是线程安全的
 所谓同步，就是在发出一个方法的调用时，在没有得到结果之前，这个调用就不返回，同时其它的线程也不能调用这个方法！
@@ -405,10 +415,17 @@ volatile变量规则：对一个被volatile修饰的写操作先发生于后面�
 问：synchronized即可修饰非静态方式，也可修饰静态方法，还可修饰代码块，有何区别
 答：synchronized修饰非静态同步方法时，锁住的是当前实例；synchronized修饰静态同步方法时，锁住的是该类的Class对象；synchronized修饰静态代码块时，锁住的是synchronized关键字后面括号内的对象。
 
+Daemon作用是为其他线程提供便利服务，守护线程最典型的应用就是GC(垃圾回收器)，他就是一个很称职的守护者。
 
-
-
-
+JUC AQS
+CountDownLatch
+CyclicBarrier
+Semaphore
+FutureTask
+BlockingQueue
+ForkJoin
+先行发生原则
+线程本地存储（Thread Local Storage）
 
 
 
