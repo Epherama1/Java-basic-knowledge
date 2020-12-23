@@ -217,8 +217,150 @@ Java 中有三个访问权限修饰符：private、protected 以及 public，如
 抽象类和抽象方法都使用 abstract 关键字进行声明。如果一个类中包含抽象方法，那么这个类必须声明为抽象类。
 抽象类和普通类最大的区别是，抽象类不能被实例化，只能被继承。
 
-接口（
+接口（？？？）
 
+super
+访问父类的构造函数：可以使用 super() 函数访问父类的构造函数，从而委托父类完成一些初始化的工作。子类一定会调用父类的构造函数来完成初始化工作，一般是调用父类的默认构造函数，如果子类需要调用父类其它构造函数，那么就可以使用 super() 函数。
+访问父类的成员：如果子类重写了父类的某个方法，可以通过使用 super 关键字来引用父类的方法实现。
+
+1. 重写（Override）
+存在于继承体系中，指子类实现了一个与父类在方法声明上完全相同的一个方法。
+为了满足里式替换原则，重写有以下三个限制：
+子类方法的访问权限必须大于等于父类方法；
+子类方法的返回类型必须是父类方法返回类型或为其子类型。
+子类方法抛出的异常类型必须是父类抛出异常类型或为其子类型。
+
+使用 @Override 注解，可以让编译器帮忙检查是否满足上面的三个限制条件。
+下面的示例中，SubClass 为 SuperClass 的子类，SubClass 重写了 SuperClass 的 func() 方法。其中：
+
+子类方法访问权限为 public，大于父类的 protected。
+子类的返回类型为 ArrayList<Integer>，是父类返回类型 List<Integer> 的子类。
+子类抛出的异常类型为 Exception，是父类抛出异常 Throwable 的子类。
+子类重写方法使用 @Override 注解，从而让编译器自动检查是否满足限制条件。
+class SuperClass {
+    protected List<Integer> func() throws Throwable {
+        return new ArrayList<>();
+    }
+}
+class SubClass extends SuperClass {
+    @Override
+    public ArrayList<Integer> func() throws Exception {
+        return new ArrayList<>();
+    }
+}
+
+2. 重载（Overload）
+存在于同一个类中，指一个方法与已经存在的方法名称上相同，但是参数类型、个数、顺序至少有一个不同。
+应该注意的是，返回值不同，其它都相同不算是重载。
+
+反射（？？？）
+
+异常：
+Throwable 可以用来表示任何可以作为异常抛出的类，分为两种： Error 和 Exception。其中 Error 用来表示 JVM 无法处理的错误，Exception 分为两种：
+受检异常 ：需要用 try...catch... 语句捕获并进行处理，并且可以从异常中恢复；
+非受检异常 ：是程序运行时错误，例如除 0 会引发 Arithmetic Exception，此时程序崩溃并且无法恢复。
+
+Java 与 C++ 的区别：
+Java 是纯粹的面向对象语言，所有的对象都继承自 java.lang.Object，C++ 为了兼容 C 即支持面向对象也支持面向过程。
+Java 通过虚拟机从而实现跨平台特性，但是 C++ 依赖于特定的平台。
+Java 没有指针，它的引用可以理解为安全指针，而 C++ 具有和 C 一样的指针。
+Java 支持自动垃圾回收，而 C++ 需要手动回收。
+Java 不支持多重继承，只能通过实现多个接口来达到相同目的，而 C++ 支持多重继承。
+Java 不支持操作符重载，虽然可以对两个 String 对象执行加法运算，但是这是语言内置支持的操作，不属于操作符重载，而 C++ 可以。
+Java 的 goto 是保留字，但是不可用，C++ 可以使用 goto。
+
+
+容器主要包括 Collection 和 Map 两种，Collection 存储着对象的集合，而 Map 存储着键值对（两个对象）的映射表。
+https://camo.githubusercontent.com/c0506ba8f5134d89ed6a398e1c165865d50c68f6c7af4e01b75248a95e0da37d/68747470733a2f2f63732d6e6f7465732d313235363130393739362e636f732e61702d6775616e677a686f752e6d7971636c6f75642e636f6d2f696d6167652d32303139313230383232303934383038342e706e67
+Collection：
+1. Set
+TreeSet：基于红黑树实现，支持有序性操作，例如根据一个范围查找元素的操作。但是查找效率不如 HashSet，HashSet 查找的时间复杂度为 O(1)，TreeSet 则为 O(logN)。
+HashSet：基于哈希表实现，支持快速查找，但不支持有序性操作。并且失去了元素的插入顺序信息，也就是说使用 Iterator 遍历 HashSet 得到的结果是不确定的。
+LinkedHashSet：具有 HashSet 的查找效率，并且内部使用双向链表维护元素的插入顺序。
+2. List
+ArrayList：基于动态数组实现，支持随机访问。
+Vector：和 ArrayList 类似，但它是线程安全的。
+LinkedList：基于双向链表实现，只能顺序访问，但是可以快速地在链表中间插入和删除元素。不仅如此，LinkedList 还可以用作栈、队列和双向队列。
+3. Queue
+LinkedList：可以用它来实现双向队列。
+PriorityQueue：基于堆结构实现，可以用它来实现优先队列。
+
+Map：
+TreeMap：基于红黑树实现。
+HashMap：基于哈希表实现。
+HashTable：和 HashMap 类似，但它是线程安全的，这意味着同一时刻多个线程同时写入 HashTable 不会导致数据不一致。
+它是遗留类，不应该去使用它，而是使用 ConcurrentHashMap 来支持线程安全，ConcurrentHashMap 的效率会更高，因为 ConcurrentHashMap 引入了分段锁。
+LinkedHashMap：使用双向链表来维护元素的顺序，顺序为插入顺序或者最近最少使用（LRU）顺序。
+
+Collection 继承了 Iterable 接口，其中的 iterator() 方法能够产生一个 Iterator 对象，通过这个对象就可以迭代遍历 Collection 中的元素。
+从 JDK 1.5 之后可以使用 foreach 方法来遍历实现了 Iterable 接口的聚合对象。
+
+适配器模式（？？？）
+
+ArrayList：
+1. ArrayList 是基于数组实现的，数组的默认大小为 10。
+2. 扩容
+添加元素时使用 ensureCapacityInternal() 方法来保证容量足够，如果不够时，需要使用 grow() 方法进行扩容，新容量的大小为 oldCapacity + (oldCapacity >> 1)，新容量大约是旧容量的 1.5 倍左右。
+扩容操作需要调用 Arrays.copyOf() 把原数组整个复制到新数组中，这个操作代价很高，因此最好在创建 ArrayList 对象时就指定大概的容量大小，减少扩容操作的次数。
+3. 删除元素
+需要调用 System.arraycopy() 将 index+1 后面的元素都复制到 index 位置上，该操作的时间复杂度为 O(N)，可以看到 ArrayList 删除元素的代价是非常高的。
+4. 序列化
+ArrayList 基于数组实现，并且具有动态扩容特性，因此保存元素的数组不一定都会被使用，那么就没必要全部进行序列化。
+保存元素的数组 elementData 使用 transient 修饰，该关键字声明数组默认不会被序列化。
+ArrayList 实现了 writeObject() 和 readObject() 来控制只序列化数组中有元素填充那部分内容。
+序列化时需要使用 ObjectOutputStream 的 writeObject() 将对象转换为字节流并输出。而 writeObject() 方法在传入的对象存在 writeObject() 的时候会去反射调用该对象的 writeObject() 来实现序列化。
+反序列化使用的是 ObjectInputStream 的 readObject() 方法，原理类似。
+
+Vector
+1. 同步
+它的实现与 ArrayList 类似，但是使用了 synchronized 进行同步。
+2. 扩容
+Vector 的构造函数可以传入 capacityIncrement 参数，它的作用是在扩容时使容量 capacity 增长 capacityIncrement。如果这个参数的值小于等于 0，扩容时每次都令 capacity 为原来的两倍。
+3. 与 ArrayList 的比较
+Vector 是同步的，因此开销就比 ArrayList 要大，访问速度更慢。最好使用 ArrayList 而不是 Vector，因为同步操作完全可以由程序员自己来控制；
+Vector 每次扩容请求其大小的 2 倍（也可以通过构造函数设置增长的容量），而 ArrayList 是 1.5 倍。
+4. 替代方案
+可以使用 Collections.synchronizedList(); 得到一个线程安全的 ArrayList。
+List<String> list = new ArrayList<>();
+List<String> synList = Collections.synchronizedList(list);
+
+CopyOnWriteArrayList
+1. 读写分离
+写操作在一个复制的数组上进行，读操作还是在原始数组中进行，读写分离，互不影响。
+写操作需要加锁，防止并发写入时导致写入数据丢失。
+写操作结束之后需要把原始数组指向新的复制数组。
+2. 适用场景
+CopyOnWriteArrayList 在写操作的同时允许读操作，大大提高了读操作的性能，因此很适合读多写少的应用场景。
+但是 CopyOnWriteArrayList 有其缺陷：
+内存占用：在写操作时需要复制一个新的数组，使得内存占用为原来的两倍左右；
+数据不一致：读操作不能读取实时性的数据，因为部分写操作的数据还未同步到读数组中。
+所以 CopyOnWriteArrayList 不适合内存敏感以及对实时性要求很高的场景。
+
+LinkedList
+1. 概览
+基于双向链表实现，使用 Node 存储链表节点信息。
+每个链表存储了 first 和 last 指针。
+2. 与 ArrayList 的比较
+ArrayList 基于动态数组实现，LinkedList 基于双向链表实现。ArrayList 和 LinkedList 的区别可以归结为数组和链表的区别：
+数组支持随机访问，但插入删除的代价很高，需要移动大量元素；
+链表不支持随机访问，但插入删除只需要改变指针。
+
+HashMap（？？？）
+
+
+
+
+
+
+
+
+
+
+如果一个对象可以完全地被多个线程同时使用，那它就是线程安全的
+所谓同步，就是在发出一个方法的调用时，在没有得到结果之前，这个调用就不返回，同时其它的线程也不能调用这个方法！
+synchronized：
+1.在需要同步的方法的 方法签名中加上 synchronized关键字
+2.使用synchronized关键字对需要进行同步的代码块进行同步
 
 原子性：
 这一点，跟数据库事务的原子性概念差不多，即一个操作（有可能包含有多个子操作）要么全部执行（生效），要么全部都不执行（都不生效）。
