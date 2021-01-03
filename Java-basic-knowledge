@@ -77,7 +77,31 @@ JSP是服务器端的，它的局限性在于数据必须在返回给客户端�
 
 项目一：
 通过tomcat和serverlet做的一个类似大众点评的一个工作搜索网站。可以注册、登录，搜索感兴趣的工作，根据搜索历史自动推荐工作，并实现收藏功能。
-通过session
+通过session实现登陆和注册，在后端通过HTTPClient实现一个虚拟客户端来调用GitHubJOB API来获得工作推荐。通过获取所有收藏历史并进行关键词提取来搜索实现自动推荐。
+The first one is a SearchItems API that provides the functionality to search around, 
+The second servlet that allows a user to set or unset their favorite records. 
+The last one that recommends similar items to the user. 
+用JDBC操作数据库
+数据库：
+users - store user information.
+
+items - store item information.
+
+keyword - store item-keyword relationship：
+Primary key = item_id + keyword 
+Foreign key = item_id => items(item_id)
+
+history - store user favorite history：
+Primary key = item_id + user_id
+Foreign key = user_id => users(user_id)
+Foreign key = item_id => items(item_id)
+
+Primary key: Also a key that is unique for each record. It cannot be NULL and used as a unique identifier.
+Foreign key: a key used to link two tables together. A FOREIGN KEY is a field (or collection of fields) in one table that refers to the PRIMARY KEY in another table.
+
+Why do we need a session?
+The HTTP protocol and Web Servers are stateless, what it means is that for a web server every request is a new request to process and they can’t identify if it’s coming from a client that has been sending requests previously. 
+
 
 RPC(Remote Procedure Call): a function call to a remote server. 
 Java Servlet: Java class to handle RPC on the server-side.
