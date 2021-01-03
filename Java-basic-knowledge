@@ -49,6 +49,7 @@ se写桌面应用，ee写web应用，me写移动应用。但现在me被安卓取
 
 servlet接口定义的是一套处理网络请求的规范，所有实现servlet的类，都需要实现它那五个方法，其中最主要的是两个生命周期方法 init()和destroy()，还有一个处理请求的service()，
 也就是说，所有实现servlet接口的类，或者说，所有想要处理网络请求的类，都需要回答这三个问题：你初始化时要做什么, 你销毁时要做什么, 你接受到请求时要做什么
+
 tomcat才是与客户端直接打交道的家伙，他监听了端口，请求过来后，根据url等信息，确定要将请求交给哪个servlet去处理，然后调用那个servlet的service方法，service方法返回一个response对象，tomcat再把这个response返回给客户端。
 
 Tomcat其实是Web服务器和Servlet容器的结合体。
@@ -75,6 +76,9 @@ JSP是服务器端的，它的局限性在于数据必须在返回给客户端�
 
 
 项目一：
+通过tomcat和serverlet做的一个类似大众点评的一个工作搜索网站。可以注册、登录，搜索感兴趣的工作，根据搜索历史自动推荐工作，并实现收藏功能。
+通过session
+
 RPC(Remote Procedure Call): a function call to a remote server. 
 Java Servlet: Java class to handle RPC on the server-side.
 Tomcat is an environment to run your web service, it provides low-level support such as making TCP connections, 
@@ -325,7 +329,35 @@ Summery ：Lesson20 6.15
 
 
 项目二：
+类似微博同城的一个web实现。包括三个API：post, search, and cluster。可以发布分享自己的媒体文件或者查看自己周围一定区域的其他人的分享。后端部署在谷歌的GKE上，媒体文件储存在GCS上，
+发布的留言评论存储在ElacticSearch上。GKE是谷歌提供的虚拟机。GCS相当于网盘或者文件系统用来存储媒体文件。ElasticSearch用来存评论的数据库。
+
+为什么不存在一起？数据库不适合存储大型二进制对象。1.之所以要存在数据库是为了结构化数据方便查找和更新。2.无论数据还是媒体文件最终都会通过文件系统存储在磁盘，若存储媒体文件时还要通过一层数据库，
+会增加不必要的数据库开销，增加数据库体积会使得维护性变差。3.GCS通过CDN（内容分发网络，负载均衡、内容分发、调度，比如通过位置判断哪个数据库离你最近，就让你访问该数据库而不是总数据库）来降低访问延迟。
+两个存储位置如何关联？数据库中存GCS中每一个文件对应的独立网址。
+
+I use JSON Web Token for server authentication. 
+
+为什么选ElasticSearch？自带的地理索引功能强大，二维表格，Key-value pair，经纬度索引，k-d tree（类似二分搜索树）；为了练习一下使用非关系型数据库；同在Google平台，相互兼容性好
+8080：go程序测试使用
+9200: ElasticSearch测试使用
+Go比C慢：garbage collector，GC的时候有一部分没法执行。
+Go的主要用途：并发机制
+
+I use Go to build a web service that has three main APIs: post, search, and cluster. 
+The post API allows users to submit a post that can include a message, geolocation, and media file. 
+The search API allows users to search nearby posts based on their current location. 
+The cluster API allows users to find all posts whose media file is a photo of a face.
+Google Cloud has a large collection of some great tools and services which provide the features required by my project, such as GCE, GCS, GKE, Cloud Vision API
+
+
+
 GKE：Lesson22 6.20
+How do you use GKE?
+I use GKE to deploy my Go service. I build my program into a docker image and run the image on virtual machines managed by my GKE cluster.  
+
+Why do you use GKE?
+I use GKE because it can help to make my service run in a cluster with multiple virtual machines, which improved the reliability of my service. Since my service is running on multiple virtual machines, a single failure of one virtual machine won’t affect the whole service.
 租虚拟机instance部署自己的service和亚马逊EC2类似
 GKE可以管理许多台虚拟机instance，可以对这多台虚拟机进行分类和管理；而且可以实现不同虚拟机台数的自动切换，用户多就多一些，用户少就少一些；自带负载均衡器，保证每台虚拟机上的负载相差不大。
 但EC2只能在一台上，如果需要多台，则必须一台一台部署
@@ -338,8 +370,8 @@ ElasticSearch：
 
 GCS：
 网盘，相当于文件系统，在线存储文件，储存用户上传的媒体文件。
-数据库不适合存储视频和照片：媒体文件用不到数据库的各种功能。数据库功能：结构化存储数据方便查找和更新。
-数据库存储数据：数据库 -> 文件系统（操作系统）-> 磁盘。若绕开数据库，直接通过文件系统存入磁盘，则数据库的开销就可以省去了。
+1.数据库不适合存储视频和照片：媒体文件用不到数据库的各种功能。数据库功能：结构化存储数据方便查找和更新。
+2.数据库存储数据：数据库 -> 文件系统（操作系统）-> 磁盘。若绕开数据库，直接通过文件系统存入磁盘，则数据库的开销就可以省去了。
 都运行在Google cloud平台上，兼容性好
 如何将媒体文件和留言相关联：GCS中每一个文件都对应一个独立的网址，把该网址存入到ElasticSearch中
 
@@ -1000,7 +1032,7 @@ Advantages of Token-Based Authentication
 Stateless, Scalable and Decoupled
 Stateless: The back-end does not need to keep a record of tokens. 
 Self-contained, containing all the data required to check its validity. No DB lookup is needed. 
-Mobile Friendly
+Mobile Friendly：移动平台和cookie的结合不是很好
 Native mobile platforms and cookies do not mix well. With a session-based approach, you simply store the session ID in a cookie. 
 Disadvantages of Token-Based Authentication：
 The size of a token is usually larger than a session id.
