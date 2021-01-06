@@ -39,7 +39,6 @@ MAVEN:
 Maven就是这个超市，只是它卖的不是红烧排骨，而是一个jar包已经和它有依赖关系的其他jar包。这样，你就不用再开撸java代码前，去各个网站下载各种不同的jar包了，也不用考虑它们之间的依赖关系。
 
 
-
 Java SE(Java Platform,Standard Edition)，应该先说这个，因为这个是标准版本。
 Java EE (Java Platform，Enterprise Edition)，java 的企业版本
 Java ME(Java Platform，Micro Edition)，java的微型版本。
@@ -1294,6 +1293,12 @@ API Service --- Central component that coordinates the communication between dif
 Kubelet -  communicates with the Kubernetes Master
 Kube-proxy - a network proxy which reflects Kubernetes networking services on each node.
 
+机器学习项目：
+训练一个时间序列模型来识别人物的动作，其实说到底是个分类模型，识别人物动作属于：站，坐，走，躺，弯腰，骑车哪一种。并通过
+数据的来源，一个人的身上不同部位放置6个传感器，然后让其作相应的动作，在一个动作的时间内多次采样取样每个传感器在采样时的强度值。
+对每个动作中的每一个传感器的时间序列进行特征提取（方差，最大值，中位数等等）。
+为避免过拟合和欠拟合问题，对于特征的数量和每个特征的数据量进行调整，获得最佳值。
+多分类问题可以简化为二项分类问题，用逻辑回归予以解决
 
 
 
