@@ -1301,4 +1301,12 @@ Kube-proxy - a network proxy which reflects Kubernetes networking services on ea
 多分类问题可以简化为二项分类问题，用逻辑回归予以解决
 
 
+Android项目：
+activity：
+Onstart：可见不可操作
+Onresume：可见可操作
+Onpsuse：可见不可操作，点击share
+Onstop：不可见不可操作：任务管理器/刷微博的时候突然来电话
 
+两个activity：
+stack：每打开一个新的activity就是在旧的上面摞，每次点返回，就会把新的（activity
