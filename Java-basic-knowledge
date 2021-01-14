@@ -1302,11 +1302,53 @@ Kube-proxy - a network proxy which reflects Kubernetes networking services on ea
 
 
 Android项目：
-activity：
+activity：一整个屏幕
 Onstart：可见不可操作
 Onresume：可见可操作
 Onpsuse：可见不可操作，点击share
 Onstop：不可见不可操作：任务管理器/刷微博的时候突然来电话
 
 两个activity：
-stack：每打开一个新的activity就是在旧的上面摞，每次点返回，就会把新的（activity
+stack：每打开一个新的activity就是在旧的上面摞，每次点返回，就会把新的（当前的、最上面的）activity弹出，显示下面的activity，因为最上面的已经弹出所以就没法再回去了。
+
+Fragment：屏幕上的一部分内容，相当于一个subactivity，相当于一堆view。为什么不用view group代替fragment：因为fragment也有lifecycle
+屏幕中的每个元素就是一个view
+
+single activity app：每个fragment可以读相同activity里面的所有数据，相当于process和thread，thread可以共享process里的数据，但两个process之间的数据共享有难度，会被serialized。
+
+Android
+
+(7-18上午1小时，没仔细看)
+通过Jetpack组件实现 Navigation Component
+通过id联系起来的
+TinNews-app-src-main-java-com.laioffer.tinnews-ui-save/home/search
+每个folder下一个fragment，每个fragment都有一个对应的layout
+main-res-navigation
+
+Network with Retrofit
+从News API拿到新闻
+TinNews-app-src-main-java-com.laioffer.tinnews-model用来存从API读取下来的新闻，为了将Json格式的新闻map成对应的Java类
+类方法：
+equal：
+hashcode：
+toString：
+Add Network permission：<uses-permission android:name="android.permission.INTERNET" />
+Retrofit：
+make http request。生成Get/Post request给后端把数据拿过来。因为android没有RestFul方法，就用Retrofit模拟一个client往后端请求数据。
+
+TinNews-app-src-main-java-com.laioffer.tinnews-network-newsAPI：将url拆分/组合
+RetrofitClient：生成httprequest。apikey放到header，json code 转换成java：.addConverterFactory(GsonConverterFactory.create())
+
+两种可以拿数据的模式：pull and push
+
+TinNews-app-src-main-java-com.laioffer.tinnews-TinnewsApplication：
+
+
+
+
+
+
+
+
+
+
