@@ -1316,7 +1316,7 @@ Fragment：屏幕上的一部分内容，相当于一个subactivity，相当于�
 
 single activity app：每个fragment可以读相同activity里面的所有数据，相当于process和thread，thread可以共享process里的数据，但两个process之间的数据共享有难度，会被serialized。
 
-Android
+AndroidManifest：决定从哪个MainActivity进去、决定用哪种application设置
 
 (7-18上午1小时，没仔细看)
 通过Jetpack组件实现 Navigation Component
@@ -1341,7 +1341,16 @@ RetrofitClient：生成httprequest。apikey放到header，json code 转换成jav
 
 两种可以拿数据的模式：pull and push
 
-TinNews-app-src-main-java-com.laioffer.tinnews-TinnewsApplication：
+TinNews-app-src-main-java-com.laioffer.tinnews-TinnewsApplication：进行application设置
+
+MVVM：
+MVP：model view presenter
+MVC：model view controller
+
+viewmodel还可以cache从model返回过来的数据
+viewmodel和lifecycle相关联，rotate之后还可以直接用viewmodel的缓存数据，但controller不缓存数据，rotate之后还要重新读取
+MVC中数据更新后，controller通知view去更新。MVVM中，view一直盯着viewmodel，viewmodel一更新view也更新
+
 
 
 
