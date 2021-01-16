@@ -1351,6 +1351,67 @@ viewmodel还可以cache从model返回过来的数据
 viewmodel和lifecycle相关联，rotate之后还可以直接用viewmodel的缓存数据，但controller不缓存数据，rotate之后还要重新读取
 MVC中数据更新后，controller通知view去更新。MVVM中，view一直盯着viewmodel，viewmodel一更新view也更新
 
+bussiness logic 不一样
+view的输入方式不一样，最后都转换成统一的方式去model里拿数据
+
+MVVM library：
+    annotationProcessor 'androidx.lifecycle:lifecycle-common-java8:2.2.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.2.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.2.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+
+view不需要担心view的格式和正确性
+从view过来的数据，经过vm会进行判断是否合法，合法则传给model，否则返回给view
+view要监听viewmodel的数据变化
+
+TinNews-app-src-main-java-com.laioffer.tinnews-Repository-NewsRepository：从NewsAPI获得数据
+public LiveData<NewsResponse> getTopHeadlines(String country) {
+    MutableLiveData<NewsResponse> topHeadlinesLiveData = new MutableLiveData<>();     //最开始执行，生成一个空的livedata
+    newsApi.getTopHeadlines(country)
+            .enqueue(new Callback<NewsResponse>() {   //enqueue帮助新建线程
+                @Override
+                public void onResponse(Call<NewsResponse> call, Response<NewsResponse> response) {   //第三，打开一个新线程将NewsAPI的数据读取到repository
+                    if (response.isSuccessful()) {
+                        topHeadlinesLiveData.setValue(response.body());
+                    } else {
+                        topHeadlinesLiveData.setValue(null);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<NewsResponse> call, Throwable t) {
+                    topHeadlinesLiveData.setValue(null);
+                }
+            });
+    return topHeadlinesLiveData;         //其次执行return将最开始生成的空livedate返回。第四，再调用return将新读取的数据返回。
+    //返回给viewmodel                     （不在本方法内：//这时，view监听到viewmodel里面livedate从空变成有数据，就讲新数据读取到view）
+}
+//不把network request放到主线程上，为了在请求的时候不会使app卡住，子线程执行network request，主线程继续运行
+asynchronous call/request
+
+TinNews-app-src-main-java-com.laioffer.tinnews-ui-home-Homeviewmodel：//将view的set country操作读进来，然后将变化的数据从model读取
+
+public class HomeViewModel extends ViewModel {
+
+    private final NewsRepository repository;
+    private final MutableLiveData<String> countryInput = new MutableLiveData<>();
+
+    public HomeViewModel(NewsRepository newsRepository) {
+        this.repository = newsRepository;
+    }
+
+    public void setCountryInput(String country) {    //从view
+        countryInput.setValue(country);
+    }
+
+    public LiveData<NewsResponse> getTopHeadlines() {
+        return Transformations.switchMap(countryInput, repository::getTopHeadlines); //view每次set都改变countryInput的值，
+	               		       //switchmap方法是将countryInput作为输入传给repository::getTopHeadlines，再将其返回值返回				       //给
+	               		       //switchmap方法是将countryInput作为输入传给repository::getTopHeadlines，再将其返回值返回
+    }
+}
+
+
 
 
 
