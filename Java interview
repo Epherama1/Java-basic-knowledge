@@ -478,4 +478,101 @@ ForkJoin：递归实现分治
 IOC：
 比如小明想用电脑玩游戏，然后我们新建了一个类叫小明，一个类叫联想电脑。然后在小明为了能用联想电脑，在自己的类里面new一个联想的电脑，然后用这台电脑玩不同的游戏，每个游戏都在小明这个类底下新建了不同方法。
 但不久之后，小明觉得这电脑配置不行玩不了新游戏，打算换一台外星人。这时，我们就需要创建一个外星人电脑类，因为小明和电脑的高耦合性我们几乎要重写小明这个类。将小明里面的变量和方法中的联想全改成外星人。
-但其实
+但其实小明并不关心电脑的品牌，只要能玩他想玩的游戏就行，而且小明不需要自己new一个电脑，它只需要从其他地方买来就行。所以，如果只给小明这个类传入一个电脑类，以后更换电脑的操作在相应的电脑类中完成即可，不需要改动小明类的变量和方法。
+这样就避免了对象之间的高耦合性。而所谓的这个过程中的控制反转就是将new不同电脑的控制权交给IOC容器（控制对象的建立和销毁）。肯定也借鉴别人的想法了，但主要是我想的，就像咱们程序员一样，需要借鉴也需要自己创造。
+
+ioc要提供的功能：实例化bean（传入要实例化的class和为其取的beanID、创建该bean所依赖的其他bean的ID）1.组装构造方法所需的参数值。2.调用构造方法实例bean。3将实例化的bean保存在map中、保存bean、提供bean、每一个bean产生一个id
+
+注入Java bean的属性值：
+构造函数注入：有参数了-不是默认构造函数了-需要传入初始值-在xml的配置文件里用constructor-arg(index, name, type, value, ref(注入一个bean需要另一个bean时))
+setter方法注入：在bean class为想注入的属性值写好setter方法，然后再配置文件中用property(index, name, type, value, ref(注入一个bean需要另一个bean时))
+setter注入集合类：<list><value> </value></list>, <map><entry>key-ref: value-ref: </entry></map>,<null></null>
+注入内部bean：<property><bean class =""></property>
+
+（将需要的初始化属性值注入之后就可以进行实例化操作了）
+实例化Bean：构造方法，静态方法、实例方法
+去上下文：ApplicationContext context = new ClassPathXmlApplicationContext("configuratin:" spring.xml)
+Bean1  bean1 = context.getBean(name:"bean1", Bean1.class);
+给bean取别名：直接在bean的xml的配置文件里声明name，或者创建一个alias标签
+
+在xml配置文件中用scope配置作用域：
+singleton:在一个context生命周期中，只存在一个实例
+prototype：每次创建都是一个新bean
+request：每次刷新都是提交一个新request，bean改变
+session：同一个浏览器不变，换浏览器变
+application：在一个serveletcontext的生命周期内都不变
+自定义作用域：需要自己写一个作用域类然后实现Scope接口，通过concurrentmap来进行实现
+
+Bean的懒加载：在调用context.getBean()方法获取bean之前，在context新建的时候bean就已经被创建了。终止：xml中lazy-init=true。懒加载只在singleton有效，其他没必要
+
+Bean的初始化及销毁：在xml中init-method = “onInit”，destroy-method="onDestroy"
+AbstractApplicationContext context = new ClassPathXmlApplicationContext("configuratin:" spring.xml)
+context.close();这时才能调用到到destroy-method
+
+Bean的属性继承：
+1.先在xml中声明父类（并标注为abstract）
+2.在子类xml中用parent=“parentclass”
+
+注解：
+1.创建一个configuration类，并用@configuration注释，在创建configuration类中创建bean的时候需要用@Bean(value = "bean2")注释，和xml中<Bean></Bean>效果一样，目的是将一个bean交由spring创建并管理
+2.ApplicationContext context = new AnnotationConfigApplicationContext(configuration.class)
+简化：
+1.创建一个configuration类，并用@configuration和@componentscan注释，componentscan声明要扫描的包路径，会自动将该路径下标注@component的class都创建Bean
+2.ApplicationContext context = new AnnotationConfigApplicationContext(configuration.class)
+
+通过注解注入Bean：
+要创建Bean的class中，在在注入的方法或变量名前加@Autowired
+指定用哪个bean注入：用Qualifier()标注要注入的bean的ID
+指定Bean的注入顺序：Order
+
+注解设置作用域：@scope()
+
+注解初始化和销毁：PostConstruct和PreDestroy
+
+AOP应用场景：权限、缓存、事务控制，日志，性能监控，分布式追踪，异常处理
+@Aspect标注这是一个AOP类，下面跟一个@component
+@Pointcut()标注要切割的位置
+@Before(位置)在“位置”之前进行下面的代码操作
+
+Pointcut：
+within：1.匹配类下面的所有方法，2.匹配包以及子包下所有类的方法
+this：匹配对象
+execution：匹配方法
+args：匹配参数
+匹配注解：@annotation，@within，@target，@args
+
+Advice：
+before：前置通知
+after：后置通知，方法执行后
+afterreturning：返回通知，成功执行后
+afterthrowing：异常通知
+Around：环绕通知                   //用法是什么？
+
+AOP的实现原理：代理模式
+静态代理：代理对象把目标对象包裹住，代理对象和外界进行打交道
+动态代理：接口代理（JDK）和继承代理（Cglib）
+JDK：实现InvocationHandler接口
+
+@Transactional进行事务控制：把两个单独的事务进行绑定实现原子性
+@PreAuthorize进行安全保证，依赖@EnableWebSecurity和@EnableGlobalMethodSecurity      //具体应用？
+@Cacheable进行缓存
+
+Redis和ElasticSearch相类似都是键值数据类型
+Jedis是Redis的Java客户端的开发包
+Jedis jedis = new Jedis(IP地址和端口号)
+jedis.set()保存数据
+jedis.get()读取数据
+jedis.close()断开数据库连接
+连接池方式连接：获得连接池配置对象(new JedisPoolConfig())、设置最大连接数、设置最大空闲连接数、获得连接池(new JedisPool(config, ip, port number))
+Redis高性能：所有数据都存储在内存当中
+持久化：
+RDB：在一定的时间间隔内将数据集快照写入到磁盘内
+AOF：将以日志的形式记录服务器所处理的每一个操作，每次服务器启动之初都读取日志并重新执行一遍
+
+
+
+
+
+
+
+
