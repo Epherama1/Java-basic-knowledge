@@ -1363,6 +1363,7 @@ MVVM library：
 view不需要担心view的格式和正确性
 从view过来的数据，经过vm会进行判断是否合法，合法则传给model，否则返回给view
 view要监听viewmodel的数据变化
+LiveData：view要一直监听的数据类型
 
 TinNews-app-src-main-java-com.laioffer.tinnews-Repository-NewsRepository：从NewsAPI获得数据
 public LiveData<NewsResponse> getTopHeadlines(String country) {
@@ -1400,20 +1401,147 @@ public class HomeViewModel extends ViewModel {
         this.repository = newsRepository;
     }
 
-    public void setCountryInput(String country) {    //从view
+    public void setCountryInput(String country) {    //从view读取set的数据
         countryInput.setValue(country);
     }
 
     public LiveData<NewsResponse> getTopHeadlines() {
         return Transformations.switchMap(countryInput, repository::getTopHeadlines); //view每次set都改变countryInput的值，
-	               		       //switchmap方法是将countryInput作为输入传给repository::getTopHeadlines，再将其返回值返回				       //给
 	               		       //switchmap方法是将countryInput作为输入传给repository::getTopHeadlines，再将其返回值返回
+				       //返回给view
     }
 }
 
+TinNews-app-src-main-java-com.laioffer.tinnews-Repository-NewViewModelFactory：
+Factory帮助创建带有lifecycle的Java class：将Java class和lifecycle绑定
+通过Factory.provider保存view的状态，不会每次获取view都新建。有了factory会把创建的view存起来，下次需要的时候不是新建而是直接到这个view上一次的状态中
+public class NewsViewModelFactory implements ViewModelProvider.Factory {
+
+    private final NewsRepository repository;
+
+    public NewsViewModelFactory(NewsRepository repository) {
+        this.repository = repository;
+    }
+
+    @NonNull
+    @Override
+    public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+        if (modelClass.isAssignableFrom(HomeViewModel.class)) {
+            return (T) new HomeViewModel(repository);
+        } else if (modelClass.isAssignableFrom(SearchViewModel.class)) {
+            return (T) new SearchViewModel(repository);
+        } else {
+            throw new IllegalStateException("Unknown ViewModel");
+        }
+    }
+}
+
+TinNews-app-src-main-java-com.laioffer.tinnews-ui-home-HomeFragment：fragment就是view
+public class HomeFragment extends Fragment {
+    private HomeViewModel viewModel;
+
+    // ... existing code
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        NewsRepository repository = new NewsRepository(getContext());      //目前只是一个单纯的java class还不是viewmodel
+        viewModel = new ViewModelProvider(this, new NewsViewModelFactory(repository))    //需要经过factory将其与lifecycle相关联才能变成viewmodel
+                .get(HomeViewModel.class);
+        viewModel.setCountryInput("us");
+        viewModel
+                .getTopHeadlines()
+                .observe(                          //通过viewmodel.getTopHeadlines()监听newsResponse（viewmodel.getTopHeadlines()的返回值）的变化
+                        getViewLifecycleOwner(),
+                        newsResponse -> {
+                            if (newsResponse != null) {
+                                Log.d("HomeFragment", newsResponse.toString());   //将结果打印出来
+                            }
+                        });
+    }
+}
+
+Stetho is another very convenient debugging tool. It can be used to view network requests and local database content.
+Gander也是为了debug
+
+Manifest列出来整个app里有哪些component
+gradle和maven差不多，添加依赖
+xml：矢量图，可以无限放大
+viewmodel API：LiveData给view用的，setInput给model输入
+repository（model）包括两个数据源：network数据（NewsAPI），local的数据（Room）
+binding：java class到xml layout的纽带
+
+//将layout和fragment binding在一起组成view
++      binding = FragmentSearchBinding.inflate(inflater, container, false);
++      return binding.getRoot();
+
+SearchFragment下实现search功能：
+@Override
+public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {   //从view中读取到search关键词，然后放到setsearchInput中
+    super.onViewCreated(view, savedInstanceState);
+
+    binding.newsSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        @Override
+        public boolean onQueryTextSubmit(String query) {
+            if (!query.isEmpty()) {
+                viewModel.setSearchInput(query);
+            }
+            binding.newsSearchView.clearFocus();
+            return true;
+       }
+        @Override
+        public boolean onQueryTextChange(String newText) {
+            return false;
+        }
+    });
+
+RecyclerView：以List的形式显示大量数据，像微博往下翻就会有新数据
+Why do we need a recycler view?
+A large collection of dynamic content, might be infinite.
+Each item in the collection is similar in structure.
+Limited memory space to hold all the data and their views.
+
+Q: do you think a chat conversation screen is a recycler view or not?
+确实是一个
+A recycler view requires an Adapter and LayoutManager. 
+
+notifyDataSetChanged()：每次set数据后让adapter去refresh
+
+SearchNewsAdapter：
+  @Override
+  public SearchNewsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {  //创建容器，一个页面能显示几个就创建几个容器
+    return null;
+  }
+
+  @Override
+  public void onBindViewHolder(@NonNull SearchNewsViewHolder holder, int position) {  //recycle的过程，并将不同的view个性化显示（显示其是否被收藏过）
+
+  }
+
+  @Override
+  public int getItemCount() {      //总的要装的东西的数量
+    return 0;
+  }
 
 
+实现滑动：SwipeAnimationSetting的API，Tinder like的GitHubdocumentation介绍的
 
+ORM、hibernate
+ORM：object(class)-relationship(database)-mapping
+saving the favorite articles to the local database with an ORM framework Room.
+Room简化sql query操作->OO design,不用query具体的table，modelclass可以代表一个table，主要是通过object-oriented方法去操作数据库。
+和SpingMVC中的hibernate很相似，annotation-based ORM solution for SQLite on Android。
+查Room相应的GitHub
+
+DAO:Data Access Objects。提供一些API来做query用的
+
+
+Android是muti thread
+一直在用main UI thread 没用background thread，不heavy
+retrofit会自己进行多线程操作
+
+AysncTask：线程切换，把DB query放在后台运行
 
 
 
