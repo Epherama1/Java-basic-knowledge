@@ -1543,10 +1543,112 @@ retrofit会自己进行多线程操作
 
 AysncTask：线程切换，把DB query放在后台运行
 
+阻塞与非阻塞
+阻塞与非阻塞是描述进程在访问某个资源时，数据是否准备就绪的的一种处理方式。
+同步与异步
+同步与异步是指访问数据的机制，同步一般指主动请求并等待IO操作完成的方式。
+异步则指主动请求数据后便可以继续处理其它任务，随后等待IO操作完毕的通知。
+老王烧开水：
+1、普通水壶煮水，站在旁边，主动的看水开了没有？同步的阻塞
+2、普通水壶煮水，去干点别的事，每过一段时间去看看水开了没有，水没开就走人。 同步非阻塞
+3、响水壶煮水，站在旁边，不会每过一段时间主动看水开了没有。如果水开了，水壶自动通知他。 异步阻塞
+4、响水壶煮水，去干点别的事，如果水开了，水壶自动通知他。异步非阻塞
 
+传统IO基于字节流和字符流进行操作，而NIO基于Channel和Buffer(缓冲区)进行操作。Selector(多路复用器)用于监听多个通道的事件，因此，单个线程可以监听多个数据通道。
+NIO的非阻塞模式，使一个线程从某通道发送请求读取数据，但是它仅能得到目前可用的数据，如果目前没有数据可用时，就什么都不会获取。而不是保持线程阻塞，
+所以直至数据变的可以读取之前，该线程可以继续做其他的事情。 
 
+提供选择已经就绪的任务的能力：Selector会不断轮询注册在其上的Channel，如果某个Channel上面发生读或者写事件，这个Channel就处于就绪状态，会被Selector轮询出来，
+然后通过SelectionKey可以获取就绪Channel的集合，进行后续的I/O操作。
 
+创建NIO服务端的主要步骤如下：
+ 打开ServerSocketChannel，监听客户端连接
+ 绑定监听端口，设置连接为非阻塞模式
+ 创建Reactor线程，创建多路复用器并启动线程
+ 将ServerSocketChannel注册到Reactor线程中的Selector上，监听ACCEPT事件
+ Selector轮询准备就绪的key
+ Selector监听到新的客户端接入，处理新的接入请求，完成TCP三次握手，简历物理链路
+ 设置客户端链路为非阻塞模式
+ 将新接入的客户端连接注册到Reactor线程的Selector上，监听读操作，读取客户端发送的网络消息
+ 异步读取客户端消息到缓冲区
+ 对Buffer编解码，处理半包消息，将解码成功的消息封装成Task
+ 将应答消息编码为Buffer，调用SocketChannel的write将消息异步发送给客户端
 
+BIO的服务端通信模型：采用BIO通信模型的服务端，通常由一个独立的Acceptor线程负责监听客户端的连接，它接收到客户端连接请求之后为每个客户端创建一个新的线程进行链路处理 处理完成后，
+通过输出流返回应答给客户端，线程销毁。即典型的一请求一应答通宵模型。
 
+HashMap的底层原理：
+允许使用null值和null键，此类不保证映射的顺序，特别是它不保证该顺序恒久不变。 
+哈希冲突的解决方案有多种:开放定址法（发生冲突，继续寻找下一块未被占用的存储地址），再散列函数法，链地址法，而HashMap即是采用了链地址法，也就是数组+链表的方式。数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的
+HashMap的主干是一个Entry数组。Entry是HashMap的基本组成单元，每一个Entry包含一个key-value键值对。
+当发生哈希冲突并且size大于阈值的时候，需要进行数组扩容，扩容时，需要新建一个长度为之前数组2倍的新的数组，然后将当前的Entry数组中的元素全部传输过去，扩容后的新数组长度为之前的2倍，所以扩容相对来说是个耗资源的操作。
+get方法的实现相对简单，key(hashcode)–>hash–>indexFor–>最终索引位置，找到对应位置table[i]，再查看是否有链表，遍历链表，通过key的equals方法比对查找对应的记录。
+put方法,首先根据key的hashcode重新计算hash值,根绝hash值得到这个元素在数组中的位置(下标),如果该数组在该位置上已经存放了其他元素,那么在这个位置上的元素将以链表的形式存放,新加入的放在链头,最先加入的放入链尾.如果数组中该位置没有元素,就直接将该元素放到数组的该位置上。
 
+Iterator：
+迭代器是一种设计模式，它是一个对象，它可以遍历并选择序列中的对象，而开发人员不需要了解该序列的底层结构。迭代器通常被称为“轻量级”对象，因为创建它的代价小。
+ArrayList list = new ArrayList();
+ //此处省略list的具体赋值过程
+ Iterator it = list.iterator();
+         while(it.hasNext()){
+             System.out.println(it.next());
+}
+HashMap<K,V> myMap=new HashMap<K,V>();
+ //省略myMap的赋值过程
+ for(Iterator<Map.Entry<K,V>> it=myMap.entrySet().iterator();it.hasNext();){
+             System.out.println(it.next());
+ }
+ HashMap<K,V> myMap=new HashMap<K,V>();
+ //省略myMap赋值过程
+ for(Object oj:myMap.entrySet()){
+             System.out.println(oj);
+ }
+
+Runnable和callable区别：
+1）Runnable提供run方法，无法通过throws抛出异常，所有CheckedException必须在run方法内部处理。Callable提供call方法，直接抛出Exception异常。
+2）Runnable的run方法无返回值，Callable的call方法提供返回值用来表示任务运行的结果
+3）Runnable可以作为Thread构造器的参数，通过开启新的线程来执行，也可以通过线程池来执行。而Callable只能通过线程池执行。
+
+Runnable使用：
+public static void main(String[] args) {
+    MyRunnable instance = new MyRunnable();
+    Thread thread = new Thread(instance);
+    thread.start();
+}
+Callable使用：
+public static void main(String[] args) throws ExecutionException, InterruptedException {
+    MyCallable mc = new MyCallable();
+    FutureTask<Integer> ft = new FutureTask<>(mc);
+    Thread thread = new Thread(ft);
+    thread.start();
+    System.out.println(ft.get());
+}
+
+线程池：
+为了避免重复的创建线程，线程池的出现可以让线程进行复用。通俗点讲，当有工作来，就会向线程池拿一个线程，当工作完成后，并不是直接关闭线程，而是将这个线程归还给线程池供其他任务使用。
+线程池的优势：
+（1）降低系统资源消耗，通过重用已存在的线程，降低线程创建和销毁造成的消耗；
+（2）提高系统响应速度，当有任务到达时，通过复用已存在的线程，无需等待新线程的创建便能立即执行；
+（3）方便线程并发数的管控。因为线程若是无限制的创建，可能会导致内存占用过多而产生OOM，并且会造成cpu过度切换（cpu切换线程是有时间成本的（需要保持当前执行线程的现场，并恢复要执行线程的现场））。
+线程池流程：
+1、判断核心线程池是否已满，没满则创建一个新的工作线程来执行任务。已满则。
+2、判断任务队列是否已满，没满则将新提交的任务添加在工作队列，已满则。
+3、判断整个线程池是否已满，没满则创建一个新的工作线程来执行任务，已满则执行饱和策略。
+如何配置线程池：
+CPU密集型任务
+尽量使用较小的线程池，一般为CPU核心数+1。 因为CPU密集型任务使得CPU使用率很高，若开过多的线程数，会造成CPU过度切换。
+IO密集型任务
+可以使用稍大的线程池，一般为2*CPU核心数。 IO密集型任务CPU使用率并不高，因此可以让CPU在等待IO的时候有其他线程去处理别的任务，充分利用CPU时间。
+
+1、newCachedThreadPool：用来创建一个可以无限扩大的线程池，适用于负载较轻的场景，执行短期异步任务。（可以使得任务快速得到执行，因为任务时间执行短，可以很快结束，也不会造成cpu过度切换）
+2、newFixedThreadPool：创建一个固定大小的线程池，因为采用无界的阻塞队列，所以实际线程数量永远不会变化，适用于负载较重的场景，对当前线程数量进行限制。（保证线程数可控，不会造成线程过多，导致系统负载更为严重）
+3、newSingleThreadExecutor：创建一个单线程的线程池，适用于需要保证顺序执行各个任务。
+4、newScheduledThreadPool：适用于执行延时或者周期性任务。
+
+锁：
+乐观锁在Java中是通过使用无锁编程来实现，最常采用的是CAS算法，Java原子类中的递增操作就通过CAS自旋实现的。
+悲观锁适合写操作多的场景，先加锁可以保证写操作时数据正确。
+乐观锁适合读操作多的场景，不加锁的特点能够使其读操作的性能大幅提升。
+
+悲观锁：
 
