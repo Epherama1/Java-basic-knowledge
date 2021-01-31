@@ -1529,6 +1529,8 @@ SearchNewsAdapter：
 
 实现滑动：SwipeAnimationSetting的API，Tinder like的GitHubdocumentation介绍的
 
+Room：实现本地存储
+
 ORM、hibernate
 ORM：object(class)-relationship(database)-mapping
 saving the favorite articles to the local database with an ORM framework Room.
@@ -1536,8 +1538,15 @@ Room简化sql query操作->OO design,不用query具体的table，modelclass可�
 和SpingMVC中的hibernate很相似，annotation-based ORM solution for SQLite on Android。
 查Room相应的GitHub
 
-DAO:Data Access Objects。提供一些API来做query用的
+Room通过注解来与数据库一一对应。
+DAO:Data Access Objects。提供一些API来做query用的。
+@Entity：数据库里的一行。Articles
+@columnInfo：每一列的名字
+@PrimaryKey：
+一个@DAO接口底下包含对于一个table的所有数据库操作
+@Query
 
+@Database数据库
 
 Android是muti thread
 一直在用main UI thread 没用background thread，不heavy
