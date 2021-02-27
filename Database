@@ -60,3 +60,87 @@ NEXT-KEY-locks：
 MVCC 不能解决幻影读问题，Next-Key Locks 就是为了解决这个问题而存在的。在可重复读（REPEATABLE READ）隔离级别下，使用 MVCC + Next-Key Locks 可以解决幻读问题。
 
 
+实现中文：default charset = utf8
+
+数据类型：
+数字：tinyint, bigint, int, float, double(不精确小数), decimal(总位数，小数点后几位)(精确小数，可以指定精度，用字符串存)
+字符串：最多255个字符，char(10)速度快，存数据的位置是固定的，长度不够用空格填充；varchar(10)，占空间小，位置不固定；text，longtext(4GB)
+时间类型：DATATIME
+enum枚举类型
+set集合类型
+
+清空表：delete from table / truncate table（快得多）
+删除表：drop table
+delete之后再插入数据，自增主键接着之前的序号，不是从1开始
+修改自增的起始点：alter table t10 AUTO_INCREMENT = 20;
+
+可以多个列一起作为主键->多个主键列同时作为外键，primary key(nid, pid)
+
+索引：主键索引，普通索引，唯一索引，联合索引
+索引需要创建额外的文件
+
+主键和唯一索引的区别：
+1.主键是一种约束，唯一索引是一种索引
+2.一张表只能有一个主键但可以有多个唯一索引
+3.主键不能为null，唯一索引可以为null
+4.主键可以作为外键，唯一索引不行
+
+一对一，权限表：两张表+外键+唯一索引
+多对多，相亲表：两张表+一张关系表+联合唯一索引+两个外键
+
+insert into tb12(name, age) values(***,***),(***,***)一次插入两个值
+insert into tb12(name, age) select name,age from tab11
+
+select * from tb12 where id (not) in (1,2,3,4)
+where between * and *;
+where name like "%a%"后面全部字符； "a_"后面一个字符
+select * from tb12 limit 0起始位置, 10显示的条数
+select * from tb12 order by id desc, name asc limit 10
+
+分组：
+select count(id), part_id from userinfo5 group by part_id having count(id) > 1; 聚合函数的二次筛选只能用having
+
+左右连表：
+select * from tb1, tb2笛卡尔积
+select * from tb1 left join tb2 on tb1.id = tb2.name
+innder join将出现null的一行隐藏
+
+上下连表：union自动去重，union all不去重
+
+去重：
+select student_id from score where num < 60 group by student_id
+select distinct student_id from score where num < 60       效率低
+
+视图：某一组查询语句设置别名，方便日后使用
+
+触发器：对一张表进行增删改查时，可以自定义关联行为
+
+加速查找速度：
+连表时数据类型一致
+用char代替varchar
+用count(1)代替count(*)
+索引尽量短
+
+组合索引：两列构成索引
+最左前缀匹配：
+where ***=*** and ***=*** 必须含有组合索引中最左边的列才会走索引
+
+索引合并：
+两个索引，在查找时用and连接
+
+不会命中索引：
+like "a%"
+函数
+or中有未建立索引的列
+类型不一致
+！=
+>
+order by
+
+
+
+
+
+
+
+
