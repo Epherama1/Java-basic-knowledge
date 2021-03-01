@@ -33,6 +33,24 @@ MySQL 的事务提交默认是隐式提交，每执行一条语句就把这条�
 设置 autocommit 为 0 可以取消自动提交；autocommit 标记是针对每个连接而不是针对服务器的。
 如果没有设置保留点，ROLLBACK 会回退到 START TRANSACTION 语句处；如果设置了保留点，并且在 ROLLBACK 中指定该保留点，则会回退到该保留点。
 
+MySQL中有以下日志文件，分别是：
+
+　　1：重做日志（redo log）
+
+　　2：回滚日志（undo log）
+
+　　3：二进制日志（binlog）
+
+　　4：错误日志（errorlog）
+
+　　5：慢查询日志（slow query log）
+
+　　6：一般查询日志（general log）
+
+　　7：中继日志（relay log）。
+
+
+
 
 数据库事务的隔离级别有4个，由低到高依次为Read uncommitted 、Read committed 、Repeatable read 、Serializable ，这四个级别可以逐个解决脏读 、不可重复读 、幻读
 大多数数据库的默认级别就是Read committed，比如Sql Server , Oracle。
