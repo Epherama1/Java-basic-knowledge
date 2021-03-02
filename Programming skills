@@ -1,0 +1,10 @@
+数组的长度：int[] nums.length;
+
+List<List<Integer>> res = new ArrayList<>();
+private void subsets(int[] nums, int startindex, LinkedList<Integer> buffer)
+res.add(new ArrayList<Integer>(buffer));
+buffer.removeLast();    //只有LinkedList才有这个方法
+subsets(nums, 0 , new ArrayList<>());
+LinkList是一个双链表,在添加和删除元素时具有比ArrayList更好的性能.但在get与set方面弱于ArrayList.
+Arrays.sort(nums);
+
