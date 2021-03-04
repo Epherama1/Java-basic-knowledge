@@ -7,4 +7,9 @@ buffer.removeLast();    //只有LinkedList才有这个方法
 subsets(nums, 0 , new ArrayList<>());
 LinkList是一个双链表,在添加和删除元素时具有比ArrayList更好的性能.但在get与set方面弱于ArrayList.
 Arrays.sort(nums);
+int [] inorder = Arrays.copyOf(preorder, preorder.length);
+element.get(k-1);返回前k个元素
+
+path += Integer.toString(root.val);
+count.put(n, count.getOrDefault(n, 0) + 1);
 
