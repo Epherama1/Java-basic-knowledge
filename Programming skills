@@ -13,3 +13,52 @@ element.get(k-1);返回前k个元素
 path += Integer.toString(root.val);
 count.put(n, count.getOrDefault(n, 0) + 1);
 
+output.add(new ArrayList<>(perm));     //向二维list中添加一维list
+
+总结List常用的方法:增(add(Object ele))、删(remove(int index))、改(set(int index, Object ele))、查(get(int index))、插(add(int index,Object ele))、长度(size()).
+
+Queue<ListNode> q = new PriorityQueue<>((n1, n2) -> n1.val - n2.val); //最小堆
+if(l!=null){                 //不为空的时候才能将其插入堆
+q.add()
+q.peek()
+q.poll()
+
+public class ListNode{//练习写自己需要的数据结构
+        int val;
+        ListNode next;
+        ListNode() {};
+        ListNode(int val){
+            this.val = val;
+        }
+        ListNode(int val, ListNode next){
+            this.val = val;
+            this.next = next;
+        }
+    }
+
+s.charAt(i)
+
+int lowestindex = Collections.min(map.values()); //获取map中最小的value
+Map<Character, Integer> map = new HashMap<>(); //HashMap中存的是每一个字符和本字符在字符串中的最右端的索引
+
+class Solution {
+    public int[][] merge(int[][] intervals) {
+        Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0])); //二位数组，根据特定条件排序
+        LinkedList<int[]> merged = new LinkedList<>();
+        
+        for(int[] interval : intervals){             //二维数组遍历
+            if(merged.isEmpty() || merged.getLast()[1] < interval[0]){   //判断数组是否为空，得到数组最后一个元素
+                merged.add(interval);
+            }
+            else{
+                merged.getLast()[1] = Math.max(merged.getLast()[1], interval[1]); //更新数组元素
+            }
+        }
+        return merged.toArray(new int[merged.size()][]);     //将List转为二维数组
+    }
+}
+
+Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
+
+
+
