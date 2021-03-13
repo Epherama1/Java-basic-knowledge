@@ -1,4 +1,10 @@
 数组的长度：int[] nums.length;
+String长度：s.length();
+其他的的都是.size()
+
+StringBuilder res = new StringBuilder();         //对string操作多的情况用StringBuilder
+res.append(value);
+return res.reverse().toString();
 
 List<List<Integer>> res = new ArrayList<>();
 private void subsets(int[] nums, int startindex, LinkedList<Integer> buffer)
@@ -40,6 +46,17 @@ s.charAt(i)
 
 int lowestindex = Collections.min(map.values()); //获取map中最小的value
 Map<Character, Integer> map = new HashMap<>(); //HashMap中存的是每一个字符和本字符在字符串中的最右端的索引
+List<String> wordDict
+Set<String> wordDictSet = new HashSet<>(wordDict);   //用List初始化set
+wordDictSet.contains(s.substring(j, i)))    //[j,i)
+
+
+private Map<String, List<Pair<Integer, String>>> M = new HashMap();
+if(!M.containsKey(key))
+            M.put(key, new ArrayList<Pair<Integer, String>>());
+M.get(key).add(new pair(timestamp, value));
+List<Pair<Integer, String>> A = M.get(key);
+A.get(i).getValue();       //ArrayList通过下标访问
 
 class Solution {
     public int[][] merge(int[][] intervals) {
