@@ -77,5 +77,11 @@ class Solution {
 
 Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
 
-
-
+Stack<Character> stack = new Stack<>();
+while (!stack.isEmpty() && Character.isDigit(stack.peek())) {  //判断char是否是数字
+                    k = k + (stack.pop() - '0') * base;    //char转数字                int m = Integer.parseInt(String.valueOf(stack.pop()));
+char[] result = new char[stack.size()];         //stack复制到数组中
+        for(int i = result.length-1 ; i>=0 ; i--)
+            result[i] = stack.pop();
+        
+return new String(result);     //char数组转string
