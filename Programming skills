@@ -85,3 +85,10 @@ char[] result = new char[stack.size()];         //stack复制到数组中
             result[i] = stack.pop();
         
 return new String(result);     //char数组转string
+
+Queue<Integer> queue = new LinkedList<>();
+int s = queue.remove();
+
+// At least one of l1 and l2 can still have nodes at this point, so connect
+// the non-null list to the end of the merged list.
+prev.next = l1 == null ? l2 : l1;      //用在某一个数组链表为空时merge的操作，将剩余的全连上
