@@ -92,3 +92,11 @@ int s = queue.remove();
 // At least one of l1 and l2 can still have nodes at this point, so connect
 // the non-null list to the end of the merged list.
 prev.next = l1 == null ? l2 : l1;      //用在某一个数组链表为空时merge的操作，将剩余的全连上
+
+char到int可以隐式转换，int到char需要显式强制转换
+
+string转为char数组：
+for (char c: ("" + (read - anchor + 1)).toCharArray()) {
+
+取数组的一部分：
+chars = Arrays.copyOfRange(chars, 0, pos);
