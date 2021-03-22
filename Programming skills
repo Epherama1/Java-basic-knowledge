@@ -97,6 +97,8 @@ char到int可以隐式转换，int到char需要显式强制转换
 
 string转为char数组：
 for (char c: ("" + (read - anchor + 1)).toCharArray()) {
+char数组转为string：
+String key = String.valueOf(ca);
 
 取数组的一部分：
 chars = Arrays.copyOfRange(chars, 0, pos);
