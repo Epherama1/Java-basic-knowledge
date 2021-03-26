@@ -17,6 +17,8 @@ int [] inorder = Arrays.copyOf(preorder, preorder.length);
 element.get(k-1);返回前k个元素
 
 path += Integer.toString(root.val);
+count.put(n, count.getOrDefault(n, 0) + 1);   //用于计算个数
+hashMap.remove(key);
 count.put(n, count.getOrDefault(n, 0) + 1);
 
 output.add(new ArrayList<>(perm));     //向二维list中添加一维list
@@ -86,6 +88,8 @@ char[] result = new char[stack.size()];         //stack复制到数组中
         
 return new String(result);     //char数组转string
 
+return new int[] {i, map.get(complement)};
+
 Queue<Integer> queue = new LinkedList<>();
 int s = queue.remove();
 
@@ -102,6 +106,9 @@ String key = String.valueOf(ca);
 
 取数组的一部分：
 chars = Arrays.copyOfRange(chars, 0, pos);
+
+int nr = grid.length;      //二维数组行数
+int nc = grid[0].length;   //二维数组列数
 
 如果放弃狭义递归函数的话，我们不得不借助一个额外的数据结构：栈。
 如此看来，无论如何都要用到栈，只不过要么让编译器来维护一个栈（函数栈），要么让程序狗来维护一个栈（数据栈）。
