@@ -10,6 +10,8 @@ List<List<Integer>> res = new ArrayList<>();
 private void subsets(int[] nums, int startindex, LinkedList<Integer> buffer)
 res.add(new ArrayList<Integer>(buffer));
 buffer.removeLast();    //只有LinkedList才有这个方法
+buffer.getLast();
+buffer.size();
 subsets(nums, 0 , new ArrayList<>());
 LinkList是一个双链表,在添加和删除元素时具有比ArrayList更好的性能.但在get与set方面弱于ArrayList.
 Arrays.sort(nums);
@@ -30,6 +32,16 @@ if(l!=null){                 //不为空的时候才能将其插入堆
 q.add()
 q.peek()
 q.poll()
+
+//最小堆另一种写法
+PriorityQueue<Integer> allocator =
+        new PriorityQueue<Integer>(
+            intervals.length,
+            new Comparator<Integer>() {
+              public int compare(Integer a, Integer b) {
+                return a - b;
+              }
+            });
 
 public class ListNode{//练习写自己需要的数据结构
         int val;
@@ -97,6 +109,17 @@ int s = queue.remove();
 // the non-null list to the end of the merged list.
 prev.next = l1 == null ? l2 : l1;      //用在某一个数组链表为空时merge的操作，将剩余的全连上
 
+    while (p != null || q != null) {      //最好不用“或”连接“null”
+        int x = (p != null) ? p.val : 0;
+        int y = (q != null) ? q.val : 0;
+        int sum = carry + x + y;
+        carry = sum / 10;
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+        if (p != null) p = p.next;
+        if (q != null) q = q.next;
+    }
+
 char到int可以隐式转换，int到char需要显式强制转换
 
 string转为char数组：
@@ -154,6 +177,11 @@ dp数组是什么？其实就是描述问题局面的一个数组。换句话说
 首先看看刚才找到的「状态」，有两个，也就是说我们需要一个二维dp数组，一维表示可选择的物品，一维表示背包的容量。
 dp[i][j] 的定义如下：若只使用前 i 个物品，当背包容量为 j 时，有 dp[i][j] 种方法可以装满背包。
 
+Queue < Integer > queue = new LinkedList < > ();
 
+动态规划：//因为要看dp[i+1][j-1], 所以i从后往前遍历，j从前往后；而且要单独处理两个元素的情况
 
-
+A sliding window would only work if all values were positive. 
+Now if the questions were to find a non-continuous subarray, 
+then we could have sorted the array and used a sliding window technique which would have worked even with negative values 
+as the sum would be always increasing and we won't get unpredictable sum.
