@@ -32,6 +32,8 @@ if(l!=null){                 //不为空的时候才能将其插入堆
 q.add()
 q.peek()
 q.poll()
+Map<Integer, Integer> count = new HashMap();
+Queue<Integer> heap = new PriorityQueue<>((n1, n2) -> count.get(n1) - count.get(n2));
 
 //最小堆另一种写法
 PriorityQueue<Integer> allocator =
@@ -185,3 +187,9 @@ A sliding window would only work if all values were positive.
 Now if the questions were to find a non-continuous subarray, 
 then we could have sorted the array and used a sliding window technique which would have worked even with negative values 
 as the sum would be always increasing and we won't get unpredictable sum.
+
+快排最好情况：O(nlogn)，最坏情况：O(n2):正排有序或者倒排有序或者元素全都一样
+
+Quickselect is a textbook algorthm typically used to solve the problems "find kth something"
+
+写代码的时候加注释
