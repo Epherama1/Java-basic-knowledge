@@ -193,3 +193,36 @@ as the sum would be always increasing and we won't get unpredictable sum.
 Quickselect is a textbook algorthm typically used to solve the problems "find kth something"
 
 写代码的时候加注释
+
+两个线程交替打印1-100:
+https://blog.csdn.net/woainiwss/article/details/52013810?utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-14.control&dist_request_id=&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-14.control
+https://blog.csdn.net/tanzhen1991910/article/details/53065275?utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-9.control&dist_request_id=&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-9.control
+https://blog.csdn.net/a159357445566/article/details/108604317?utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control&dist_request_id=&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromMachineLearnPai2%7Edefault-1.control
+Thread+synchronized， Thread+ReentrantLock，Runnable+synchronized：
+public class PrintNumber implements Runnable {
+    private static int cnt = 0;
+    @Override
+    public void run() {
+        while (cnt <= 100) {
+            synchronized (this) {
+                cnt++;
+                System.out.println(Thread.currentThread().getName()+ ':' + cnt);
+                this.notify();
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    public static void main(String[] args) {
+		PrintNumber p = new PrintNumber();
+        Thread thread0 = new Thread(p);
+        Thread thread1 = new Thread(p);
+		thread0.setName("线程1");
+		thread1.setName("线程2");
+        thread0.start();
+        thread1.start();
+    }
+}
