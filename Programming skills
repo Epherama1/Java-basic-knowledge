@@ -44,6 +44,18 @@ PriorityQueue<Integer> allocator =
                 return a - b;
               }
             });
+	    
+Queue<TreeNode> queue = new LinkedList<TreeNode>();  //使用LinkedList作为队列
+queue.size()
+queue.remove()      //queue的话默认弹出最后一个元素，但如果是List则没有不带参数的remove
+queue.peek()
+queue.poll()
+queue.add()
+!queue.isEmpty()
+
+pathNodes.remove(pathNodes.size() - 1);List删除元素必须要带索引参数
+
+Stack<TreeNode> stack = new Stack<>();         //栈
 
 public class ListNode{//练习写自己需要的数据结构
         int val;
