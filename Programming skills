@@ -239,6 +239,9 @@ public class PrintNumber implements Runnable {
     }
 }
 
+生产者消费者：
+https://blog.csdn.net/u010297957/article/details/51346074
+
 快速排序：
 public class Solution {
     public void quicksort(int[] arr, int l, int r){
@@ -330,3 +333,37 @@ public class HeapSort {
         arr[b] = temp;
     }
 }
+
+单例模式：
+懒汉式写法（线程安全）
+public class Singleton {  
+   private static Singleton instance;  
+   private Singleton (){}  
+   public static synchronized Singleton getInstance() {  
+   if (instance == null) {  
+       instance = new Singleton();  
+   }  
+   return instance;  
+   }  
+}
+
+饿汉式写法
+public class Singleton {  
+   private static Singleton instance = new Singleton();  
+   private Singleton (){}  
+   public static Singleton getInstance() {  
+   return instance;  
+   }  
+}
+
+静态内部类
+public class Singleton {  
+   private static class SingletonHolder {  
+   private static final Singleton INSTANCE = new Singleton();  
+   }  
+   private Singleton (){}  
+   public static final Singleton getInstance() {  
+   return SingletonHolder.INSTANCE;  
+   }  
+}
+
