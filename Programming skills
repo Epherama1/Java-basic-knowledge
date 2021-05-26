@@ -18,6 +18,12 @@ Arrays.sort(nums);
 int [] inorder = Arrays.copyOf(preorder, preorder.length);
 element.get(k-1);返回前k个元素
 
+sum = (sum << 1) | root.val;       //二进制位相加
+
+二叉树递归操作：
+pathsList.add(new ArrayList<>(pathNodes)); //当要把一个满足条件的List插入到最终结果中时，要新建
+pathNodes.remove(pathNodes.size() - 1);   //二叉树递归中List对象是不会重新复制一个再入栈的，入栈的一直是本身，所以需要手动更新
+
 path += Integer.toString(root.val);
 count.put(n, count.getOrDefault(n, 0) + 1);   //用于计算个数
 hashMap.remove(key);
@@ -33,6 +39,8 @@ q.add()
 q.peek()
 q.poll()
 Map<Integer, Integer> count = new HashMap();
+
+
 Queue<Integer> heap = new PriorityQueue<>((n1, n2) -> count.get(n1) - count.get(n2));
 
 //最小堆另一种写法
