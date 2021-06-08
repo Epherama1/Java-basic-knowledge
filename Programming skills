@@ -43,6 +43,8 @@ Map<Integer, Integer> count = new HashMap();
 
 Queue<Integer> heap = new PriorityQueue<>((n1, n2) -> count.get(n1) - count.get(n2));
 
+Queue<TreeNode> queue = new LinkedList<TreeNode>();  //普通队列就用LinkedList实现
+
 //最小堆另一种写法
 PriorityQueue<Integer> allocator =
         new PriorityQueue<Integer>(
