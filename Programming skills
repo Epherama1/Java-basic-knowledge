@@ -19,6 +19,8 @@ int [] inorder = Arrays.copyOf(preorder, preorder.length);
 element.get(k-1);返回前k个元素
 
 sum = (sum << 1) | root.val;       //二进制位相加
+n >>>= 1;     //>>有符号右移
+              //>>>无符号右移
 
 二叉树递归操作：
 pathsList.add(new ArrayList<>(pathNodes)); //当要把一个满足条件的List插入到最终结果中时，要新建
