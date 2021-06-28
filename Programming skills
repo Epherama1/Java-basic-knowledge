@@ -379,3 +379,30 @@ public class Singleton {
    }  
 }
 
+class Solution {
+    private class LargerNumberComparator implements Comparator<String> { //重新写一个比较类
+        @Override
+        public int compare(String a, String b){
+            String order1 = a + b;                //String拼接
+            String order2 = b + a;
+            return order2.compareTo(order1);     //谁来调用方法是有讲究的，和最后的排序完的顺序相关
+        }
+    }
+    
+    public String largestNumber(int[] nums) {
+        String[] asStrs = new String[nums.length];
+        for(int i = 0 ; i < nums.length ; i++){
+            asStrs[i] = String.valueOf(nums[i]);    //int转String
+        }
+        Arrays.sort(asStrs, new LargerNumberComparator()); //数组排序，专递进去排序方法
+        
+        if(asStrs[0].equals("0"))     //String判断相等
+            return "0";
+        
+        String largestNumber = new String();
+        for(String str : asStrs)
+            largestNumber += str;
+        
+        return largestNumber;
+    }
+}
