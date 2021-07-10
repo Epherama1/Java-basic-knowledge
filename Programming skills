@@ -11,6 +11,8 @@ StringBuilder res = new StringBuilder();         //对string操作多的情况�
 res.append(value);
 return res.reverse().toString();
 
+快速找到链表的中点：快慢指针
+
 Arrays.sort(connections, (a, b) -> a[2] - b[2]);    //数组排序
 
 List<List<Integer>> res = new ArrayList<>();
