@@ -2,6 +2,9 @@
 String长度：s.length();
 其他的的都是.size()
 
+results = Arrays.copyOfRange(results, 0, 5);取数组的一部分
+list.subList;取list的一部分
+
 String.valueOf(char 和 int 都行);
 String转int：Integer.parseInt();
 Long.valueOf("String")返回Long包装类型
