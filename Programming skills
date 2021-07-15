@@ -2,13 +2,15 @@
 String长度：s.length();
 其他的的都是.size()
 
-results = Arrays.copyOfRange(results, 0, 5);取数组的一部分
+results = Arrays.copyOfRange(results, 0, 5);取数组的一部分，包含下边界，不包含上边界
 list.subList;取list的一部分
 
 String.valueOf(char 和 int 都行);
 String转int：Integer.parseInt();
 Long.valueOf("String")返回Long包装类型
 Long.parseLong("String")返回long基本数据类型
+
+pathNodes.remove(pathNodes.size() - 1); 
 
 StringBuilder res = new StringBuilder();         //对string操作多的情况用StringBuilder
 res.append(value);
