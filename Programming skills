@@ -2,6 +2,8 @@
 String长度：s.length();
 其他的的都是.size()
 
+return new int[]{x, y};
+
 results = Arrays.copyOfRange(results, 0, 5);取数组的一部分，包含下边界，不包含上边界
 list.subList;取list的一部分
 
