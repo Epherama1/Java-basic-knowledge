@@ -4,8 +4,12 @@ String长度：s.length();
 
 return new int[]{x, y};
 
+Set<List<Integer>> s = new HashSet<>();   //set里能放list
+
 results = Arrays.copyOfRange(results, 0, 5);取数组的一部分，包含下边界，不包含上边界
 list.subList;取list的一部分
+
+return merged.toArray(new int[merged.size()][]);     //将List转为二维数组
 
 String.valueOf(char 和 int 都行);
 String转int：Integer.parseInt();
