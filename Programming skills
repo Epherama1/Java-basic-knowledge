@@ -11,6 +11,17 @@ list.subList;取list的一部分
 
 return merged.toArray(new int[merged.size()][]);     //将List转为二维数组
 
+int begin = 0;
+int finish = row * column - 1;
+int mid = begin + (finish - begin)/2;
+int num = matrix[mid / column][mid % column];
+
+// 判断指定的 String 对象是否出现在此字符串中
+            if(!"+-*/".contains(token)){
+                stack.push(Integer.valueOf(token)); //string 转换为 integer
+                continue;  //结束这次循环，开始下一次
+            }
+
 String.valueOf(char 和 int 都行);
 String转int：Integer.parseInt();
 Long.valueOf("String")返回Long包装类型
