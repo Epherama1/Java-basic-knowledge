@@ -11,6 +11,12 @@ list.subList;取list的一部分
 
 return merged.toArray(new int[merged.size()][]);     //将List转为二维数组
 
+        import java.util.Random;
+        Random random_num = new Random();
+        int pivot_index = l + random_num.nextInt(r - l);  //随机化一下保证递归树平衡
+        
+        swap(l, pivot_index);
+
 int begin = 0;
 int finish = row * column - 1;
 int mid = begin + (finish - begin)/2;
