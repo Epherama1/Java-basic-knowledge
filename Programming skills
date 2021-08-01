@@ -2,6 +2,9 @@
 String长度：s.length();
 其他的的都是.size()
 
+
+Arrays.copyOfRange(preorder, 1, i+1)
+
 return new int[]{x, y};
 
 Set<List<Integer>> s = new HashSet<>();   //set里能放list
