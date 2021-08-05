@@ -1,7 +1,12 @@
 数组的长度：int[] nums.length;
 String长度：s.length();
 其他的的都是.size()
+ArrayList.get(k-1);
 
+LinkedList.addFirst()
+LinkedList.addLast()
+
+sum = (sum << 1) | root.val;       //二进制位相加
 
 Arrays.copyOfRange(preorder, 1, i+1)
 
